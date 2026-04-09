@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LevityCare PRO | Ecosistema Parkinson Ultra-Premium</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo-container">
+                <div class="logo">LEVITYCARE<span>PRO</span></div>
+            </div>
+            <div class="status-capsule">
+                <div class="pulse-node"></div>
+                <span id="ai-status">ALGORITMO IA: ACTIVO</span>
+            </div>
+        </header>
+
+        <main id="main-content" class="bento-grid">
+            <!-- Content Injected via JS -->
+        </main>
+
+        <nav class="space-dock">
+            <button class="dock-item active" data-view="home" title="Panel Principal">
+                <i data-lucide="layout-dashboard"></i>
+            </button>
+            <button class="dock-item" data-view="analytics" title="Analíticas Predictivas">
+                <i data-lucide="bar-chart-3"></i>
+            </button>
+            <button class="dock-item" data-view="exercise" title="Entrenamiento Antigravedad">
+                <i data-lucide="zap"></i>
+            </button>
+            <button class="dock-item" data-view="medication" title="Medicación y Alertas">
+                <i data-lucide="pill"></i>
+            </button>
+            <button class="dock-item" data-view="settings" title="Configuración">
+                <i data-lucide="settings"></i>
+            </button>
+        </nav>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

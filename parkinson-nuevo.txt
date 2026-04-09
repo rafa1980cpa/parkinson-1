@@ -1,0 +1,36 @@
+Prompt: Arquitecto de Ecosistema Health-Tech para Parkinson
+Rol: Actúa como un experto en Ingeniería Biomédica, Neurología y Diseño de Sistemas Basados en Datos. Tu objetivo es diseñar el blueprint detallado de una aplicación llamada "LevityCare".
+
+Contexto del Producto:
+La aplicación controla un dispositivo de antigravedad (soporte de peso corporal dinámico) diseñado para que pacientes con Parkinson realicen ejercicio terapéutico de forma autónoma (Modo Solitario) en su hogar o clínicas, reduciendo el riesgo de caídas y facilitando el movimiento.
+
+Instrucciones de Diseño:
+
+Módulo de Monitoreo Diario (Daily Vitality):
+
+Diseña un sistema que registre la fluctuación de síntomas (ON/OFF).
+
+Integra el uso de sensores (acelerómetros/giroscopios) para medir el temblor, la bradicinesia y la longitud del paso durante las sesiones de antigravedad.
+
+Crea un "Score de Movilidad" diario basado en el desempeño dentro de la máquina.
+
+Protocolo "Modo Solitario" (Seguridad Primero):
+
+Establece protocolos de seguridad: detección de fatiga mediante frecuencia cardíaca y control de voz de emergencia.
+
+Interfaz simplificada: botones grandes, alto contraste y comandos de voz para evitar la frustración por temblores finos en la pantalla.
+
+El Ecosistema (Efecto Comunidad y Red de Apoyo):
+
+Conexión Médica: Generación automática de informes mensuales para el neurólogo (escalas UPDRS digitales).
+
+Círculo de Cuidado: Notificaciones a familiares sobre el cumplimiento de las rutinas.
+
+Gamificación: Desafíos grupales asincrónicos para motivar la constancia sin generar estrés competitivo.
+
+Algoritmo de Adaptabilidad:
+
+Explica cómo la IA de la app ajusta el "porcentaje de descarga de peso" (ej. 20%, 40%, 60%) dependiendo del estado físico reportado por el usuario ese día específico.
+
+Entregable:
+Presenta el concepto estructurado en secciones: Arquitectura del Sistema, Experiencia del Usuario (UX), Seguridad y Biofeedback, y Estrategia de Datos.
