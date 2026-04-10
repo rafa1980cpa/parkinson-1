@@ -3,7 +3,7 @@ title: Parkinson
 emoji: 👁
 colorFrom: green
 colorTo: red
-sdk: static
+sdk: docker
 pinned: false
 short_description: neurologico
 ---
