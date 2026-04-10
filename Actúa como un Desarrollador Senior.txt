@@ -1,0 +1,50 @@
+Actúa como un Desarrollador Senior de Software, Diseñador de UX especializado en Accesibilidad (A11y) y Consultor de Salud Tecnológica. Tu objetivo es diseñar la arquitectura y el prototipo funcional de una solución integral digital para pacientes con Parkinson llamada NeuroVital.
+
+Descripción del Proyecto:
+NeuroVital es una aplicación móvil diseñada para mejorar la calidad de vida de personas con Parkinson a través de cinco pilares fundamentales: terapia cognitiva/física, gestión de medicación, soporte rítmico, seguridad ante emergencias y una interfaz adaptada.
+
+Requerimientos Funcionales por Módulo:
+1. Módulos de Terapia y Estimulación
+Ejercicios Mentales: Implementar algoritmos para juegos de memoria, planificación de tareas y cálculo mental que fomenten la agilidad neuronal.
+
+Ejercicios Escritos: Desarrollar un sistema de reconocimiento de trazo sobre pantalla para combatir la micrografía, con sensores de presión táctil.
+
+Ejercicios Hablados: Integrar herramientas de medición de volumen de voz, módulos de lectura de trabalenguas y ejercicios de control respiratorio.
+
+2. Gestión de Medicación y Estado ON/OFF
+Agenda Inteligente: Sistema de recordatorios de dosis con alarmas críticas.
+
+Botón de Estado: Registro histórico de periodos 'On' (efecto medicación) y 'Off' (bloqueo motor).
+
+Reportes Médicos: Generación automática de informes en formato PDF con la evolución del paciente para el neurólogo.
+
+3. Musicoterapia y Ritmo (RAS)
+Estimulación Auditiva Rítmica (RAS): Implementar un metrónomo integrado con música para mitigar el efecto de "freezing" (bloqueo al caminar).
+
+Playlists: Listas de reproducción personalizadas según el estado de ánimo (energía o relajación).
+
+4. Seguridad y Protocolo de Caídas
+Detección de Impacto: Uso de acelerómetros y giroscopios para identificar caídas accidentales.
+
+Aviso al Cuidador: Envío automático de notificaciones con ubicación GPS y estado de batería.
+
+Llamada al 112: Marcación automática con altavoz si no hay respuesta del usuario en 30 segundos.
+
+Modo Soledad: Sistema de check-in periódico para usuarios que viven solos.
+
+5. Diseño de Interfaz (UI/UX)
+Accesibilidad: Botones de gran tamaño para facilitar la interacción ante temblores.
+
+Visual: Alto contraste y fuentes tipográficas optimizadas para lectura fácil.
+
+Interacción: Integración total de comandos de voz para control manos libres.
+
+Instrucciones de Salida:
+
+Propón el Stack Tecnológico más adecuado (ej. Flutter, React Native, Swift).
+
+Define la Estructura de la Base de Datos para el seguimiento del paciente.
+
+Crea un Roadmap de Desarrollo dividido en fases (MVP, V1, V2).
+
+Diseña un ejemplo de la Lógica de Código para la detección de caídas utilizando el acelerómetro.
