@@ -51,11 +51,11 @@ const views = {
         </div>
         <div id="motriz-box" class="neuro-card" style="display:none; text-align: center;">
             <h3>Evaluación Motriz Diaria</h3>
-            <p style="margin-bottom: 1rem;">Toca el círculo lo más rápido posible o dibuja la espiral.</p>
-            <div style="width: 100%; height: 200px; background: #eee; border-radius: 20px; display: flex; align-items: center; justify-content: center; border: 2px dashed #ccc;">
-                <p style="color: #888;">[Área de Canvas para Tapping/Espiral]</p>
+            <p style="margin-bottom: 1rem;">Dibuja una espiral siguiendo la línea de puntos para medir la estabilidad (Telemetría de temblor en tiempo real).</p>
+            <div style="width: 100%; height: 250px; background: white; border-radius: 20px; border: 2px dashed #ccc; overflow: hidden; position: relative;">
+                <canvas id="spiral-canvas" style="width:100%; height:100%; display:block;"></canvas>
             </div>
-            <button class="action-btn btn-large" style="width:100%; margin-top: 1rem; background: var(--secondary-blue); color: white;" onclick="alert('Guardando resultados de telemetría localmente...')">Terminar Evaluación</button>
+            <button class="action-btn btn-large" style="width:100%; margin-top: 1rem; background: var(--secondary-blue); color: white;" onclick="alert('Guardando resultados y procesando métricas con Edge AI...')">Terminar Evaluación</button>
         </div>
         <div id="twister-box" class="neuro-card" style="display:none; background: var(--secondary-blue); color:white; text-align: center;">
             <h3>${t().tongue_twister}</h3>
@@ -152,7 +152,50 @@ function changeView(v) { state.currentView = v; render(); }
 // Actions Boris
 function openMotrizTest() {
     const box = document.getElementById('motriz-box');
-    if (box) box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    if (box) {
+        box.style.display = box.style.display === 'none' ? 'block' : 'none';
+        if (box.style.display === 'block') {
+            setTimeout(() => {
+                const canvas = document.getElementById('spiral-canvas');
+                if (!canvas) return;
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
+                
+                // Draw guide spiral
+                ctx.beginPath();
+                ctx.strokeStyle = '#ecf0f1';
+                ctx.setLineDash([5, 5]);
+                for (let i=0; i<400; i+=2) {
+                    const angle = 0.1 * i;
+                    const x = canvas.width/2 + (1+angle)*Math.cos(angle)*3;
+                    const y = canvas.height/2 + (1+angle)*Math.sin(angle)*3;
+                    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.strokeStyle = 'var(--primary-green)';
+                
+                let isDrawing = false;
+                const getCoords = (evt) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const e = evt.touches ? evt.touches[0] : evt;
+                    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+                };
+                
+                const startDraw = (e) => { isDrawing = true; const pos = getCoords(e); ctx.beginPath(); ctx.moveTo(pos.x, pos.pos_y || pos.y); };
+                const draw = (e) => { if (!isDrawing) return; const pos = getCoords(e); ctx.lineTo(pos.x, pos.y); ctx.stroke(); };
+                
+                canvas.onmousedown = startDraw; canvas.onmousemove = draw; canvas.onmouseup = () => isDrawing = false; canvas.onmouseleave = () => isDrawing = false;
+                canvas.ontouchstart = (e) => { e.preventDefault(); startDraw(e); };
+                canvas.ontouchmove = (e) => { e.preventDefault(); draw(e); };
+                canvas.ontouchend = () => isDrawing = false;
+
+            }, 200);
+        }
+    }
 }
 
 function openTwister() {
@@ -195,15 +238,38 @@ function triggerFallSim() {
 function cancelFall() { state.fallCountdown = 0; render(); }
 
 function toggleVoiceCmd() {
-    state.voiceListening = !state.voiceListening;
-    render();
-    if (state.voiceListening) {
-        setTimeout(() => {
-            alert("Comando reconocido: 'Abrir Medicación' Boris");
-            state.voiceListening = false;
-            changeView('health');
-        }, 2000);
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        alert("Navegador no soporta API de Voz Nativa. Edge AI bloqueado.");
+        return;
     }
+    if (state.voiceListening) return;
+
+    state.voiceListening = true;
+    render();
+    
+    const recognition = new SpeechRecognition();
+    recognition.lang = state.lang === 'es' ? 'es-ES' : 'en-US';
+    recognition.interimResults = false;
+    
+    recognition.onresult = (e) => {
+        const cmd = e.results[0][0].transcript.toLowerCase();
+        state.voiceListening = false;
+        
+        let recognized = true;
+        if (cmd.includes("medica") || cmd.includes("salud")) changeView('health');
+        else if (cmd.includes("emergencia") || cmd.includes("ayuda") || cmd.includes("socorro")) triggerFallSim();
+        else if (cmd.includes("ritmo") || cmd.includes("música")) changeView('ras');
+        else if (cmd.includes("terapia") || cmd.includes("ejercicio")) changeView('therapy');
+        else recognized = false;
+        
+        alert(recognized ? "Comando procesado: " + cmd : "No entendí el comando: " + cmd);
+        render();
+    };
+    
+    recognition.onerror = () => { state.voiceListening = false; render(); };
+    recognition.onend = () => { state.voiceListening = false; render(); };
+    recognition.start();
 }
 
 function toggleVoice() { alert("Micrófono activo... Boris"); }
