@@ -218,8 +218,44 @@ function startResp() {
 }
 
 function exportPDF() {
-    alert("Generando Reporte PDF para el Neurólogo... Boris");
-    setTimeout(() => alert("PDF Exportado con éxito. Boris"), 1500);
+    alert("Procesando la Big Data y Generando Reporte Clínico PDF...");
+    const element = document.createElement('div');
+    element.innerHTML = `
+        <div style="padding: 40px; font-family: 'Inter', sans-serif; color: #333;">
+            <div style="text-align:center; border-bottom: 2px solid #27ae60; padding-bottom: 20px; margin-bottom: 30px;">
+                <h1 style="color: #27ae60; margin:0; font-size: 2.5rem;">NEUROVITAL</h1>
+                <h2 style="margin: 5px 0; color: #2c3e50;">Reporte Clínico Neurológico</h2>
+                <p style="color: #7f8c8d; font-size: 0.9rem;">Fecha: ${new Date().toLocaleDateString()}</p>
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+                <h3 style="color: #2980b9; border-bottom: 1px solid #eee; padding-bottom: 5px;">Datos del Paciente</h3>
+                <p><strong>Nombre:</strong> ${state.patientName} | <strong>Estado Actual:</strong> <span style="color: ${state.patientStatus === 'ON' ? '#27ae60' : '#e74c3c'}">${state.patientStatus}</span></p>
+                <p><strong>Evaluación Motriz (Telemetría de Espiral):</strong> Precisión 84% (Estable / Leve Temblor)</p>
+                <p><strong>Fluctuaciones Hoy:</strong> 3 horas en OFF documentadas.</p>
+            </div>
+
+            <div style="margin-bottom: 30px;">
+                <h3 style="color: #2980b9; border-bottom: 1px solid #eee; padding-bottom: 5px;">Adherencia a la Medicación</h3>
+                <ul style="list-style:none; padding:0;">
+                    ${state.medications.map(m => `<li style="padding: 10px; background: #f8f9fa; margin-bottom: 5px; border-radius: 5px;">✅ <strong>${m.time}</strong> - ${m.name} (Toma Confirmada)</li>`).join('')}
+                </ul>
+            </div>
+            
+            <div style="background: #eaf2f8; padding: 20px; border-radius: 10px;">
+                <h3 style="color: #2c3e50; margin-top:0;">Detección Edge AI:</h3>
+                <p style="margin-bottom:0;">No se detectaron episodios de caídas. Análisis vocal NLP muestra leve hipotonia (recomendada revisión logopédica).</p>
+            </div>
+        </div>
+    `;
+    
+    html2pdf().set({
+        margin: 10,
+        filename: 'NeuroVital_Reporte_Clinico.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).from(element).save();
 }
 
 function triggerFallSim() {
@@ -278,18 +314,41 @@ function toggleVoice() { alert("Micrófono activo... Boris"); }
 function loginAs(role) {
     document.getElementById('login-flow').style.display = 'none';
     document.getElementById('main-header').style.display = 'block';
-    document.getElementById('neuro-content').style.display = 'block';
     
-    const isPatient = role === 'patient';
-    state.patientName = isPatient ? "Rafael" : "Cuidador (Viendo a Rafael)";
-    document.querySelector('.status-tag').innerText = "Perfil: " + state.patientName;
-    
-    // Si es cuidador, se podría mostrar una vista diferente, pero por ahora mostramos el health dashboard
     if(role === 'caretaker') {
-        changeView('health');
-    } else {
-        render(); // Renderiza la vista por defecto
+        const main = document.getElementById('neuro-content');
+        main.style.display = 'block';
+        document.querySelector('.status-tag').innerText = "Viendo paciente: Rafael";
+        
+        main.innerHTML = `
+            <div class="neuro-card" style="background: var(--secondary-blue); color: white; text-align:center;">
+                <h3>Panel del Cuidador (Espejo en Tiempo Real)</h3>
+                <p style="font-size: 1.2rem;">Sincronizado vía Cloud</p>
+            </div>
+            <div class="neuro-card">
+                <h3>Estado General</h3>
+                <p style="margin-bottom:0.5rem;"><strong>Fluctuación Motora:</strong> FASE <strong>ON</strong> ✅</p>
+                <p style="margin-bottom:0.5rem;"><strong>Última Medicación:</strong> Levodopa (08:00 AM) ✅</p>
+                <div style="padding: 1rem; background:#ecf0f1; border-radius:10px; margin-top:1rem; border-left: 4px solid var(--primary-green);">
+                    Acelerómetro Activo: No hay caídas reportadas.
+                </div>
+            </div>
+             <div class="neuro-card">
+                <h3 style="color:var(--accent-red)">Wearables (Apple Health / Google Fit)</h3>
+                <p style="font-size: 1.5rem; margin-bottom:0.5rem;">❤ 72 bpm</p>
+                <p style="font-size: 1.5rem;">🛌 4.2h Sueño profundo</p>
+             </div>
+             <button class="action-btn btn-large" style="width:100%; margin-top: 1rem;" onclick="location.reload()">Cerrar Sesión</button>
+        `;
+        return;
     }
+
+    document.getElementById('neuro-content').style.display = 'block';
+    document.querySelector('.status-tag').innerText = "Perfil: Rafael (Paciente)";
+    
+    const nav = document.querySelector('nav.bottom-nav');
+    if(nav) nav.style.display = 'flex';
+    render();
 }
 
 // Inicialización para esconder el main si todavía no hay login
