@@ -12,7 +12,7 @@
 </head>
 <body>
     <div class="app-container">
-        <header>
+        <header id="main-header" style="display: none;">
             <div class="logo">NEUROVITAL</div>
             <p>Solución Integral Digital para Parkinson</p>
             <div class="status-row">
@@ -21,9 +21,26 @@
             </div>
         </header>
 
-        <main id="neuro-content">
+        <main id="neuro-content" style="display: none;">
             <!-- Content injected via JS -->
         </main>
+        
+        <!-- Login Flow -->
+        <main id="login-flow" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 80vh; text-align: center;">
+            <h1 class="logo" style="color: var(--primary-green); font-size: 3rem; margin-bottom: 2rem;">NEUROVITAL</h1>
+            <p style="font-size: 1.2rem; margin-bottom: 2rem;">Selecciona tu perfil para comenzar</p>
+            <button class="btn-sos" style="width: 100%; border-radius: 20px; background: var(--primary-green); margin-bottom: 1rem; height: auto; padding: 1.5rem;" onclick="loginAs('patient')">
+                <span style="font-size: 1.5rem;">Soy Paciente</span>
+            </button>
+            <button class="btn-sos" style="width: 100%; border-radius: 20px; background: var(--secondary-blue); height: auto; padding: 1.5rem;" onclick="loginAs('caretaker')">
+                <span style="font-size: 1.5rem;">Soy Cuidador</span>
+            </button>
+        </main>
+
+        <!-- Floating SOS Button -->
+        <button class="btn-sos floating-sos" onclick="triggerFallSim()" title="Emergencia SOS">
+            <span>SOS</span>
+        </button>
 
         <nav class="bottom-nav">
             <button class="nav-link active" data-view="therapy" title="Terapias">

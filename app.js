@@ -41,44 +41,57 @@ const t = () => translations[state.lang];
 // Views
 const views = {
     therapy: () => `
-        <div class="neuro-card">
-            <h3>Módulos de Terapia Boris</h3>
-            <div class="therapy-grid">
-                <button class="action-btn" onclick="openTwister()">${t().tongue_twister}</button>
-                <button class="action-btn" onclick="startResp()">${t().resp_ctrl}</button>
-                <button class="action-btn" onclick="alert('Spiral Trace...')">Escritura</button>
+        <div class="neuro-card" style="text-align: center;">
+            <h3>Módulos de Terapia</h3>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <button class="action-btn btn-large" onclick="openTwister()">🎙️ Evaluación de Disartria</button>
+                <button class="action-btn btn-large" onclick="startResp()">🫁 ${t().resp_ctrl}</button>
+                <button class="action-btn btn-large" onclick="openMotrizTest()">✍️ Test Motriz (Tapping/Espiral)</button>
             </div>
         </div>
-        <div id="twister-box" class="neuro-card" style="display:none; background: var(--secondary-blue); color:white;">
-            <h3>${t().tongue_twister}</h3>
-            <p style="font-size: 1.2rem; line-height: 1.5;">"Pablito clavó un clavito en la calva de un calvito."</p>
-            <button class="action-btn" onclick="toggleVoice()">🎙️ Grabar Pronunciación</button>
+        <div id="motriz-box" class="neuro-card" style="display:none; text-align: center;">
+            <h3>Evaluación Motriz Diaria</h3>
+            <p style="margin-bottom: 1rem;">Toca el círculo lo más rápido posible o dibuja la espiral.</p>
+            <div style="width: 100%; height: 200px; background: #eee; border-radius: 20px; display: flex; align-items: center; justify-content: center; border: 2px dashed #ccc;">
+                <p style="color: #888;">[Área de Canvas para Tapping/Espiral]</p>
+            </div>
+            <button class="action-btn btn-large" style="width:100%; margin-top: 1rem; background: var(--secondary-blue); color: white;" onclick="alert('Guardando resultados de telemetría localmente...')">Terminar Evaluación</button>
         </div>
-        <div id="resp-box" class="neuro-card" style="display:none;">
+        <div id="twister-box" class="neuro-card" style="display:none; background: var(--secondary-blue); color:white; text-align: center;">
+            <h3>${t().tongue_twister}</h3>
+            <p style="font-size: 1.2rem; line-height: 1.5; padding: 1rem;">"Pablito clavó un clavito en la calva de un calvito."</p>
+            <button class="action-btn btn-large" style="width:100%; border:none; background:white; color:var(--secondary-blue);" onclick="toggleVoice()">🎙️ Grabar</button>
+        </div>
+        <div id="resp-box" class="neuro-card" style="display:none; text-align: center;">
             <h3>${t().resp_ctrl}</h3>
             <div id="resp-circle" style="width:100px; height:100px; background: var(--primary-green); border-radius:50%; margin: 2rem auto; transition: transform 2s ease-in-out;"></div>
-            <p id="resp-text" style="text-align:center; font-weight:800;">INSPIRA...</p>
+            <p id="resp-text" style="text-align:center; font-weight:800; font-size: 1.5rem;">INSPIRA...</p>
         </div>
     `,
     health: () => `
+        <div class="neuro-card" style="text-align: center; padding: 2rem 1rem;">
+            <h3>¿Cómo te sientes hoy?</h3>
+            <div style="display:flex; gap:1rem; margin-top: 1rem;">
+                <button class="action-btn btn-large" style="flex:1; background:${state.patientStatus==='ON'?'var(--primary-green)':'#eee'}; color:${state.patientStatus==='ON'?'white':'#666'}" onclick="state.patientStatus='ON';render();">
+                    <br>ESTADO: ON
+                </button>
+                <button class="action-btn btn-large" style="flex:1; background:${state.patientStatus==='OFF'?'var(--accent-red)':'#eee'}; color:${state.patientStatus==='OFF'?'white':'#666'}" onclick="state.patientStatus='OFF';render();">
+                    <br>ESTADO: OFF
+                </button>
+            </div>
+        </div>
         <div class="neuro-card">
-            <h3>${t().smart_agenda}</h3>
-            ${state.medications.map(m => `
-                <div style="display:flex; justify-content:space-between; align-items:center; background:#f8f9fa; padding:1.5rem; border-radius:15px; margin-bottom:1rem;">
-                    <div><h4 style="margin:0">${m.name}</h4><small>${m.time}</small></div>
-                    <button class="action-btn" style="background:var(--primary-green); color:white;">TOMAR</button>
+            <h3>Próxima Medicación</h3>
+            ${state.medications.slice(0,1).map(m => `
+                <div style="background:#f8f9fa; padding:1.5rem; border-radius:15px; text-align: center;">
+                    <h2 style="margin:0; font-size:2rem; color:var(--text-dark);">${m.time}</h2>
+                    <p style="font-size:1.2rem; margin-bottom: 1rem;">${m.name}</p>
+                    <button class="action-btn btn-large" style="width:100%; background:var(--primary-green); color:white;">REGISTRAR TOMA</button>
                 </div>
             `).join('')}
         </div>
         <div class="neuro-card">
-            <button class="action-btn" style="width:100%;" onclick="exportPDF()">${t().export_pdf}</button>
-        </div>
-        <div class="neuro-card">
-            <h3>${t().status_on}/${t().status_off}</h3>
-            <div style="display:flex; gap:1rem;">
-                <button class="action-btn" style="flex:1; background:${state.patientStatus==='ON'?'var(--primary-green)':'#eee'}" onclick="state.patientStatus='ON';render();">ON Boris</button>
-                <button class="action-btn" style="flex:1; background:${state.patientStatus==='OFF'?'var(--accent-red)':'#eee'}" onclick="state.patientStatus='OFF';render();">OFF Boris</button>
-            </div>
+            <button class="action-btn btn-large" style="width:100%; border: 2px solid var(--secondary-blue); color:var(--secondary-blue);" onclick="exportPDF()">${t().export_pdf}</button>
         </div>
     `,
     ras: () => `
@@ -137,6 +150,11 @@ function updateNav() {
 function changeView(v) { state.currentView = v; render(); }
 
 // Actions Boris
+function openMotrizTest() {
+    const box = document.getElementById('motriz-box');
+    if (box) box.style.display = box.style.display === 'none' ? 'block' : 'none';
+}
+
 function openTwister() {
     const box = document.getElementById('twister-box');
     box.style.display = box.style.display === 'none' ? 'block' : 'none';
@@ -190,4 +208,49 @@ function toggleVoiceCmd() {
 
 function toggleVoice() { alert("Micrófono activo... Boris"); }
 
-window.addEventListener('DOMContentLoaded', render);
+// Auth Flow Simulation
+function loginAs(role) {
+    document.getElementById('login-flow').style.display = 'none';
+    document.getElementById('main-header').style.display = 'block';
+    document.getElementById('neuro-content').style.display = 'block';
+    
+    const isPatient = role === 'patient';
+    state.patientName = isPatient ? "Rafael" : "Cuidador (Viendo a Rafael)";
+    document.querySelector('.status-tag').innerText = "Perfil: " + state.patientName;
+    
+    // Si es cuidador, se podría mostrar una vista diferente, pero por ahora mostramos el health dashboard
+    if(role === 'caretaker') {
+        changeView('health');
+    } else {
+        render(); // Renderiza la vista por defecto
+    }
+}
+
+// Inicialización para esconder el main si todavía no hay login
+window.addEventListener('DOMContentLoaded', () => {
+    // Hide navigation initially
+    const nav = document.querySelector('nav.bottom-nav');
+    if(nav) nav.style.display = 'none';
+    
+    // We only render things once logged in, but we export the render function
+});
+
+// Estabilización de Toque (Touch Stabilization)
+// Ignora clics adicionales en un intervalo de 800ms para evitar toques accidentales por temblor
+let lastTouchTime = 0;
+document.addEventListener('click', (e) => {
+    const now = new Date().getTime();
+    if (now - lastTouchTime < 800) {
+        // Excepción para el login: permitir clicar rápido al inicio si es necesario, aunque es mejor global
+        const target = e.target;
+        if(target && target.tagName !== 'BUTTON' && !target.closest('button')) {
+             return;
+        }
+        
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Touch prevented (Stabilization Active)');
+        return false;
+    }
+    lastTouchTime = now;
+}, true);

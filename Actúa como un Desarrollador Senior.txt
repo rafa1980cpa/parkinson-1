@@ -1,50 +1,41 @@
-Actúa como un Desarrollador Senior de Software, Diseñador de UX especializado en Accesibilidad (A11y) y Consultor de Salud Tecnológica. Tu objetivo es diseñar la arquitectura y el prototipo funcional de una solución integral digital para pacientes con Parkinson llamada NeuroVital.
+Actúa como un Senior Product Manager y Arquitecto Full-Stack especializado en HealthTech y Accesibilidad Universal.
 
-Descripción del Proyecto:
-NeuroVital es una aplicación móvil diseñada para mejorar la calidad de vida de personas con Parkinson a través de cinco pilares fundamentales: terapia cognitiva/física, gestión de medicación, soporte rítmico, seguridad ante emergencias y una interfaz adaptada.
+1. Definición del Producto
+Nombre: Neuro Vida (Versión Premium).
 
-Requerimientos Funcionales por Módulo:
-1. Módulos de Terapia y Estimulación
-Ejercicios Mentales: Implementar algoritmos para juegos de memoria, planificación de tareas y cálculo mental que fomenten la agilidad neuronal.
+Target: Pacientes con Parkinson (etapas 1-4), cuidadores primarios y neurólogos.
 
-Ejercicios Escritos: Desarrollar un sistema de reconocimiento de trazo sobre pantalla para combatir la micrografía, con sensores de presión táctil.
+Propuesta de Valor: Una solución integral que utiliza IA y hardware móvil para mitigar las barreras motoras, monitorear la progresión de la enfermedad y optimizar la comunicación médico-paciente.
 
-Ejercicios Hablados: Integrar herramientas de medición de volumen de voz, módulos de lectura de trabalenguas y ejercicios de control respiratorio.
+2. Capa de Interfaz y UX (Accesibilidad Avanzada)
+Algoritmo de Estabilización de Toque: Diseña una lógica de interfaz que ignore los "toques accidentales" o múltiples causados por el temblor esencial.
 
-2. Gestión de Medicación y Estado ON/OFF
-Agenda Inteligente: Sistema de recordatorios de dosis con alarmas críticas.
+Jerarquía Visual: Uso de botones de gran formato (mínimo 60x60dp), tipografías de alta legibilidad y alto contraste para usuarios con visión afectada.
 
-Botón de Estado: Registro histórico de periodos 'On' (efecto medicación) y 'Off' (bloqueo motor).
+Navegación Sin Manos: Implementación de un flujo completo basado en comandos de voz (NLP) para que el usuario pueda navegar toda la app sin tocar la pantalla.
 
-Reportes Médicos: Generación automática de informes en formato PDF con la evolución del paciente para el neurólogo.
+3. Módulos Premium de Inteligencia Artificial
+Análisis de Voz y Disartria: Desarrollar un módulo que analice las notas de voz para detectar micro-variaciones en el tono y volumen, enviando alertas tempranas de fatiga vocal o progresión cognitiva.
 
-3. Musicoterapia y Ritmo (RAS)
-Estimulación Auditiva Rítmica (RAS): Implementar un metrónomo integrado con música para mitigar el efecto de "freezing" (bloqueo al caminar).
+Symptom Tracker Predictivo: Mediante el acelerómetro y giroscopio del smartphone, realizar pruebas motrices diarias (como el test de tapping o dibujo de espiral) para cuantificar la gravedad del temblor.
 
-Playlists: Listas de reproducción personalizadas según el estado de ánimo (energía o relajación).
+Generador de Reportes Clínicos: Sistema que procesa la Big Data del usuario y genera un PDF profesional bajo estándares médicos (resumen de fluctuaciones ON/OFF, cumplimiento de medicación y picos de síntomas).
 
-4. Seguridad y Protocolo de Caídas
-Detección de Impacto: Uso de acelerómetros y giroscopios para identificar caídas accidentales.
+4. Ecosistema de Conectividad (Caretaker Sync)
+Panel del Cuidador: Una interfaz espejo para familiares que permita ver en tiempo real si el paciente ha tomado su medicación o si ha sufrido una caída (detección de caídas mediante sensores).
 
-Aviso al Cuidador: Envío automático de notificaciones con ubicación GPS y estado de batería.
+Sincronización con Wearables: Integración con Apple HealthKit y Google Fit para extraer datos de sueño y frecuencia cardíaca, cruzándolos con los síntomas de Parkinson.
 
-Llamada al 112: Marcación automática con altavoz si no hay respuesta del usuario en 30 segundos.
+5. Restricciones Técnicas y Seguridad
+Privacidad: Cumplimiento estricto de normativas de salud (HIPAA / RGPD). Datos de salud encriptados de extremo a extremo.
 
-Modo Soledad: Sistema de check-in periódico para usuarios que viven solos.
+Rendimiento: La aplicación debe ser ligera y funcionar con baja latencia, priorizando el procesamiento local (Edge AI) para no depender siempre de internet.
 
-5. Diseño de Interfaz (UI/UX)
-Accesibilidad: Botones de gran tamaño para facilitar la interacción ante temblores.
+Modo Crítico: Botón de emergencia visible en todas las pantallas con envío de ubicación GPS a contactos de confianza.
 
-Visual: Alto contraste y fuentes tipográficas optimizadas para lectura fácil.
+6. Entregables Esperados
+Arquitectura de Datos: Diagrama de cómo se almacenan y cruzan los síntomas con la medicación.
 
-Interacción: Integración total de comandos de voz para control manos libres.
+Flujo de Usuario: Mapa de navegación desde el registro hasta el reporte médico.
 
-Instrucciones de Salida:
-
-Propón el Stack Tecnológico más adecuado (ej. Flutter, React Native, Swift).
-
-Define la Estructura de la Base de Datos para el seguimiento del paciente.
-
-Crea un Roadmap de Desarrollo dividido en fases (MVP, V1, V2).
-
-Diseña un ejemplo de la Lógica de Código para la detección de caídas utilizando el acelerómetro.
+Stack Sugerido: Recomendación de tecnologías (ej. Flutter para multiplataforma, Firebase para tiempo real, Python para los modelos de IA).
