@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NeuroVital | Solución Integral Parkinson</title>
+    <title>NeuroVida PRO | Ecosistema Parkinson</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,49 +13,106 @@
 </head>
 <body>
     <div class="app-container">
+        <!-- Main Application Header -->
         <header id="main-header" style="display: none;">
-            <div class="logo">NEUROVITAL</div>
-            <p>Solución Integral Digital para Parkinson</p>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div class="logo">NEUROVIDA</div>
+                    <p>Salud Digital de Alta Precisión</p>
+                </div>
+                <button class="action-btn" style="padding: 0.5rem 1rem; font-size: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid var(--border-glass);" onclick="handleLogout()">
+                    <i data-lucide="log-out" style="width: 14px; height: 14px; vertical-align: middle;"></i> Salir
+                </button>
+            </div>
             <div class="status-row">
-                <span class="status-tag">Paciente: Rafael</span>
+                <span class="status-tag" id="user-role-tag">Perfil: Paciente</span>
                 <span class="status-tag" id="current-state-tag">Estado: ON</span>
             </div>
         </header>
 
+        <!-- Dynamic Content Area -->
         <main id="neuro-content" style="display: none;">
-            <!-- Content injected via JS -->
+            <!-- Content injected via app.js -->
         </main>
-        
-        <!-- Login Flow -->
-        <main id="login-flow" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 80vh; text-align: center;">
-            <h1 class="logo" style="color: var(--primary-green); font-size: 3rem; margin-bottom: 2rem;">NEUROVITAL</h1>
-            <p style="font-size: 1.2rem; margin-bottom: 2rem;">Selecciona tu perfil para comenzar</p>
-            <button class="btn-sos" style="width: 100%; border-radius: 20px; background: var(--primary-green); margin-bottom: 1rem; height: auto; padding: 1.5rem;" onclick="loginAs('patient')">
-                <span style="font-size: 1.5rem;">Soy Paciente</span>
-            </button>
-            <button class="btn-sos" style="width: 100%; border-radius: 20px; background: var(--secondary-blue); height: auto; padding: 1.5rem;" onclick="loginAs('caretaker')">
-                <span style="font-size: 1.5rem;">Soy Cuidador</span>
-            </button>
+
+        <!-- Tapping Test Overlay -->
+        <div id="tapping-box" class="neuro-card" style="display:none; text-align: center; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 3000; width: 90%; max-width: 400px; background: white;">
+            <h3>Test de Tapping</h3>
+            <p style="margin-bottom: 1rem;">Mida su estabilidad motriz pulsando rítmicamente el botón.</p>
+            <div id="tap-area" style="width: 140px; height: 140px; background: var(--secondary-blue); border-radius: 50%; margin: 1.5rem auto; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; font-weight: 900; cursor: pointer; user-select: none; box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);">
+                TAP
+            </div>
+            <div id="tap-stats" style="font-family: var(--font-accent); font-size: 1.2rem; margin: 1rem 0;">
+                Inicie el test...
+            </div>
+            <button class="action-btn btn-primary" style="width: 100%;" onclick="closeTapping()">Terminar</button>
+        </div>
+
+        <!-- AUTHENTICATION SYSTEM -->
+        <main id="auth-flow" style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 80vh; text-align: center;">
+            <div id="login-form-box" class="neuro-card" style="width: 100%; max-width: 400px;">
+                <h1 class="logo" style="color: var(--primary-green); font-size: 2.5rem; margin-bottom: 1rem;">NEUROVIDA</h1>
+                <p style="margin-bottom: 2rem; color: #64748b;">Ingrese a su ecosistema de salud</p>
+                
+                <div style="display: flex; flex-direction: column; gap: 1rem; text-align: left;">
+                    <div>
+                        <label style="font-weight: 700; font-size: 0.9rem;">Correo Electrónico</label>
+                        <input type="email" id="login-email" placeholder="ejemplo@correo.com" style="width: 100%; padding: 1rem; border-radius: 12px; border: 1.5px solid #e2e8f0; margin-top: 0.5rem; font-size: 1rem;">
+                    </div>
+                    <div>
+                        <label style="font-weight: 700; font-size: 0.9rem;">Contraseña</label>
+                        <input type="password" id="login-pass" placeholder="••••••••" style="width: 100%; padding: 1rem; border-radius: 12px; border: 1.5px solid #e2e8f0; margin-top: 0.5rem; font-size: 1rem;">
+                    </div>
+                    <button class="action-btn btn-primary" style="width: 100%; margin-top: 1rem;" onclick="handleLogin()">INICIAR SESIÓN</button>
+                </div>
+                
+                <div style="margin-top: 1.5rem; font-size: 0.9rem;">
+                    <a href="#" onclick="showAuthMode('recover')" style="color: var(--secondary-blue); text-decoration: none;">¿Olvidó su contraseña?</a>
+                </div>
+                <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid #e2e8f0;">
+                <p style="font-size: 0.9rem;">¿No tiene cuenta?</p>
+                <button class="action-btn" style="width: 100%; margin-top: 0.5rem; border: 1.5px solid var(--primary-green); color: var(--primary-green);" onclick="showAuthMode('register')">CREAR PERFIL NUEVO</button>
+            </div>
+
+            <!-- Registration Mode -->
+            <div id="register-form-box" class="neuro-card" style="display: none; width: 100%; max-width: 400px;">
+                <h3>Crear Nuevo Perfil</h3>
+                <div style="display: flex; flex-direction: column; gap: 1rem; text-align: left;">
+                    <input type="text" id="reg-name" placeholder="Nombre Completo" style="width: 100%; padding: 1rem; border-radius: 12px; border: 1.5px solid #e2e8f0;">
+                    <input type="email" id="reg-email" placeholder="Correo Electrónico" style="width: 100%; padding: 1rem; border-radius: 12px; border: 1.5px solid #e2e8f0;">
+                    <input type="password" id="reg-pass" placeholder="Crear Contraseña" style="width: 100%; padding: 1rem; border-radius: 12px; border: 1.5px solid #e2e8f0;">
+                    
+                    <div style="background: #f8fafc; padding: 1rem; border-radius: 12px;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 0.5rem;">Tipo de Perfil</label>
+                        <select id="reg-role" style="width: 100%; padding: 0.8rem; border-radius: 10px; border: 1px solid #cbd5e1;">
+                            <option value="patient">Soy Paciente</option>
+                            <option value="caretaker">Soy Cuidador</option>
+                        </select>
+                    </div>
+
+                    <button class="action-btn btn-primary" style="width: 100%;" onclick="handleRegister()">REGISTRARSE</button>
+                    <button class="action-btn" style="width: 100%;" onclick="showAuthMode('login')">VOLVER</button>
+                </div>
+            </div>
+
+            <!-- Recovery Mode -->
+            <div id="recover-form-box" class="neuro-card" style="display: none; width: 100%; max-width: 400px;">
+                <h3>Recuperar Acceso</h3>
+                <p style="margin-bottom: 1.5rem; color: #64748b;">Le enviaremos un código de seguridad a su correo.</p>
+                <input type="email" id="recover-email" placeholder="Su correo registrado" style="width: 100%; padding: 1rem; border-radius: 12px; border: 1.5px solid #e2e8f0; margin-bottom: 1.5rem;">
+                <button class="action-btn btn-primary" style="width: 100%;" onclick="handleRecover()">ENVIAR CÓDIGO</button>
+                <button class="action-btn" style="width: 100%; margin-top: 1rem;" onclick="showAuthMode('login')">CANCELAR</button>
+            </div>
         </main>
 
         <!-- Floating SOS Button -->
-        <button class="btn-sos floating-sos" onclick="triggerFallSim()" title="Emergencia SOS">
+        <button id="floating-sos-btn" class="btn-sos floating-sos" style="display: none;" onclick="triggerFallSim()" title="Emergencia SOS">
             <span>SOS</span>
         </button>
 
-        <nav class="bottom-nav">
-            <button class="nav-link active" data-view="therapy" title="Terapias">
-                <i data-lucide="brain-circuit"></i>
-            </button>
-            <button class="nav-link" data-view="ras" title="Ritmo RAS">
-                <i data-lucide="music-2"></i>
-            </button>
-            <button class="nav-link" data-view="health" title="Salud">
-                <i data-lucide="calendar-check"></i>
-            </button>
-            <button class="nav-link" data-view="security" title="Seguridad">
-                <i data-lucide="shield-alert"></i>
-            </button>
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav" style="display: none;">
+            <!-- Nav links generated by app.js -->
         </nav>
     </div>
 

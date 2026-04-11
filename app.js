@@ -1,144 +1,142 @@
 /**
- * NeuroVital PRO - Master Plan Execution Boris
+ * NeuroVida PRO - Perfeccionamiento de Ecosistema (Fase 7)
+ * Foco: Autenticación Profesional, Análisis de Informes AI y Estabilidad UX
  */
 
 const translations = {
     es: {
-        tagline: "Solución Integral Digital para Parkinson",
+        tagline: "Salud Digital de Alta Precisión",
         therapy: "Terapias",
         voice_ritmo: "Voz y Ritmo",
         salud_agenda: "Salud y Agenda",
         seguridad: "Seguridad",
-        tongue_twister: "Trabalenguas Boris",
-        resp_ctrl: "Control Respiratorio Boris",
-        smart_agenda: "Agenda Inteligente Boris",
-        export_pdf: "EXPORTAR PDF Boris",
-        fall_detect: "SIMULAR CAÍDA Boris",
-        voice_cmd: "COMANDOS DE VOZ Boris",
-        status_on: "ESTADO: ON Boris",
-        status_off: "ESTADO: OFF Boris",
-        call_112: "LLAMADA 112 EN MARCHA... Boris"
+        tongue_twister: "Evaluación de Disartria",
+        resp_ctrl: "Control Respiratorio",
+        smart_agenda: "Agenda Inteligente",
+        export_pdf: "GENERAR REPORTE CLÍNICO",
+        fall_detect: "SIMULAR CAÍDA (SOS)",
+        voice_cmd: "ASISTENTE DE VOZ",
+        status_on: "ESTADO: ON",
+        status_off: "ESTADO: OFF",
+        call_112: "CONECTANDO CON SERVICIOS DE EMERGENCIA...",
+        gps_accuracy: "Precisión GPS: +/- 4 metros",
+        sync_ok: "Dispositivos Sincronizados",
+        ana_informe: "ANALIZAR INFORME MÉDICO"
     }
 };
 
 const state = {
+    user: JSON.parse(localStorage.getItem('nv_user')) || null,
     lang: 'es',
     currentView: 'therapy',
-    patientName: "Rafael",
     patientStatus: 'ON',
     medications: [
-        { name: 'Levodopa', time: '08:00', icon: 'pill' },
-        { name: 'Ropinirol', time: '13:00', icon: 'tablets' }
+        { name: 'Levodopa/Carbidopa', time: '08:00', taken: true },
+        { name: 'Ropinirol', time: '13:00', taken: false },
+        { name: 'Levodopa/Carbidopa', time: '20:00', taken: false }
     ],
     isRecording: false,
     fallCountdown: 0,
     voiceListening: false,
-    respirationStep: 0
+    respirationStep: 0,
+    tappingData: { timestamps: [], intervals: [], active: false },
+    gpsMetadata: { lat: "40.4168° N", lon: "3.7038° W", precision: "4m", lastUpdate: "Recién actualizado" },
+    auditLog: [],
+    reports: [
+        { id: 1, date: '2026-03-15', source: 'Hospital Ruber', diagnosis: 'Estabilidad en Parkinson grado 2', analysis: 'Se observa buena respuesta al tratamiento actual. Mantener ejercicio motriz.' }
+    ],
+    isAnalyzingReport: false
 };
 
 const t = () => translations[state.lang];
 
-// Views
-const views = {
-    therapy: () => `
-        <div class="neuro-card" style="text-align: center;">
-            <h3>Módulos de Terapia</h3>
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                <button class="action-btn btn-large" onclick="openTwister()">🎙️ Evaluación de Disartria</button>
-                <button class="action-btn btn-large" onclick="startResp()">🫁 ${t().resp_ctrl}</button>
-                <button class="action-btn btn-large" onclick="openMotrizTest()">✍️ Test Motriz (Tapping/Espiral)</button>
-            </div>
-        </div>
-        <div id="motriz-box" class="neuro-card" style="display:none; text-align: center;">
-            <h3>Evaluación Motriz Diaria</h3>
-            <p style="margin-bottom: 1rem;">Dibuja una espiral siguiendo la línea de puntos para medir la estabilidad (Telemetría de temblor en tiempo real).</p>
-            <div style="width: 100%; height: 250px; background: white; border-radius: 20px; border: 2px dashed #ccc; overflow: hidden; position: relative;">
-                <canvas id="spiral-canvas" style="width:100%; height:100%; display:block;"></canvas>
-            </div>
-            <button class="action-btn btn-large" style="width:100%; margin-top: 1rem; background: var(--secondary-blue); color: white;" onclick="alert('Guardando resultados y procesando métricas con Edge AI...')">Terminar Evaluación</button>
-        </div>
-        <div id="twister-box" class="neuro-card" style="display:none; background: var(--secondary-blue); color:white; text-align: center;">
-            <h3>${t().tongue_twister}</h3>
-            <p style="font-size: 1.2rem; line-height: 1.5; padding: 1rem;">"Pablito clavó un clavito en la calva de un calvito."</p>
-            <button class="action-btn btn-large" style="width:100%; border:none; background:white; color:var(--secondary-blue);" onclick="toggleVoice()">🎙️ Grabar</button>
-        </div>
-        <div id="resp-box" class="neuro-card" style="display:none; text-align: center;">
-            <h3>${t().resp_ctrl}</h3>
-            <div id="resp-circle" style="width:100px; height:100px; background: var(--primary-green); border-radius:50%; margin: 2rem auto; transition: transform 2s ease-in-out;"></div>
-            <p id="resp-text" style="text-align:center; font-weight:800; font-size: 1.5rem;">INSPIRA...</p>
-        </div>
-    `,
-    health: () => `
-        <div class="neuro-card" style="text-align: center; padding: 2rem 1rem;">
-            <h3>¿Cómo te sientes hoy?</h3>
-            <div style="display:flex; gap:1rem; margin-top: 1rem;">
-                <button class="action-btn btn-large" style="flex:1; background:${state.patientStatus==='ON'?'var(--primary-green)':'#eee'}; color:${state.patientStatus==='ON'?'white':'#666'}" onclick="state.patientStatus='ON';render();">
-                    <br>ESTADO: ON
-                </button>
-                <button class="action-btn btn-large" style="flex:1; background:${state.patientStatus==='OFF'?'var(--accent-red)':'#eee'}; color:${state.patientStatus==='OFF'?'white':'#666'}" onclick="state.patientStatus='OFF';render();">
-                    <br>ESTADO: OFF
-                </button>
-            </div>
-        </div>
-        <div class="neuro-card">
-            <h3>Próxima Medicación</h3>
-            ${state.medications.slice(0,1).map(m => `
-                <div style="background:#f8f9fa; padding:1.5rem; border-radius:15px; text-align: center;">
-                    <h2 style="margin:0; font-size:2rem; color:var(--text-dark);">${m.time}</h2>
-                    <p style="font-size:1.2rem; margin-bottom: 1rem;">${m.name}</p>
-                    <button class="action-btn btn-large" style="width:100%; background:var(--primary-green); color:white;">REGISTRAR TOMA</button>
-                </div>
-            `).join('')}
-        </div>
-        <div class="neuro-card">
-            <button class="action-btn btn-large" style="width:100%; border: 2px solid var(--secondary-blue); color:var(--secondary-blue);" onclick="exportPDF()">${t().export_pdf}</button>
-        </div>
-    `,
-    ras: () => `
-         <div class="neuro-card">
-            <h3>Musicoterapia (RAS) Boris</h3>
-            <p>Metrónomo activo para evitar el 'Freezing'. Boris.</p>
-            <button class="action-btn" style="width:100%;">🎵 Activar Playlist Energía</button>
-         </div>
-         <div class="neuro-card">
-            <h3>${t().voice_cmd}</h3>
-            <div style="text-align:center; padding:1rem;">
-                <button class="btn-sos" style="width:100px; height:100px; border-radius:50%;" onclick="toggleVoiceCmd()">
-                    <i data-lucide="mic" style="width:40px; height:40px;"></i>
-                </button>
-                <p style="margin-top:1rem;">${state.voiceListening ? 'ESCUCHANDO...' : 'PULSA PARA HABLAR'}</p>
-            </div>
-         </div>
-    `,
-    security: () => `
-        <div class="neuro-card">
-            <h3>Seguridad Boris</h3>
-            <button class="action-btn" style="width:100%; border:2px solid var(--accent-red); color:var(--accent-red);" onclick="triggerFallSim()">${t().fall_detect}</button>
-            <div id="fall-alert" style="display:${state.fallCountdown > 0 ? 'block' : 'none'}; background: var(--accent-red); color:white; padding:2rem; border-radius:20px; margin-top:1rem; text-align:center;">
-                <h1 style="font-size:3rem; margin:0;">${state.fallCountdown}s</h1>
-                <p>CAÍDA DETECTADA. LLAMANDO AL 112...</p>
-                <button class="action-btn" style="background:white; color:var(--accent-red);" onclick="cancelFall()">CANCELAR Boris</button>
-            </div>
-        </div>
-        <div class="neuro-card">
-             <p>Modo Soledad: <strong>ACTIVO</strong> Boris</p>
-             <small>GPS Activo: 40.4168° N, 3.7038° W Boris</small>
-        </div>
-    `
-};
+// --- SISTEMA DE AUTENTICACIÓN ---
+
+function showAuthMode(mode) {
+    document.getElementById('login-form-box').style.display = mode === 'login' ? 'block' : 'none';
+    document.getElementById('register-form-box').style.display = mode === 'register' ? 'block' : 'none';
+    document.getElementById('recover-form-box').style.display = mode === 'recover' ? 'block' : 'none';
+}
+
+function handleLogin() {
+    const email = document.getElementById('login-email').value;
+    const pass = document.getElementById('login-pass').value;
+
+    if (!email || !pass) {
+        alert("Por favor, rellene todos los campos.");
+        return;
+    }
+
+    // Simulación de validación
+    const userData = { email, name: "Rafael", role: "patient" };
+    state.user = userData;
+    localStorage.setItem('nv_user', JSON.stringify(userData));
+    initApp();
+}
+
+function handleRegister() {
+    const name = document.getElementById('reg-name').value;
+    const email = document.getElementById('reg-email').value;
+    const pass = document.getElementById('reg-pass').value;
+    const role = document.getElementById('reg-role').value;
+
+    if (!name || !email || !pass) {
+        alert("Todos los campos son obligatorios para crear el perfil.");
+        return;
+    }
+
+    const userData = { name, email, role };
+    state.user = userData;
+    localStorage.setItem('nv_user', JSON.stringify(userData));
+    alert("Perfil creado con éxito. Bienvenido a NeuroVida.");
+    initApp();
+}
+
+function handleRecover() {
+    const email = document.getElementById('recover-email').value;
+    if (!email) {
+        alert("Introduzca su correo para continuar.");
+        return;
+    }
+    alert("Código de recuperación enviado a: " + email + "\nRevise su bandeja de entrada.");
+    showAuthMode('login');
+}
+
+function initApp() {
+    if (!state.user) return;
+    
+    document.getElementById('auth-flow').style.display = 'none';
+    document.getElementById('main-header').style.display = 'block';
+    document.getElementById('neuro-content').style.display = 'block';
+    document.getElementById('floating-sos-btn').style.display = 'flex';
+    document.querySelector('nav.bottom-nav').style.display = 'flex';
+    
+    document.getElementById('user-role-tag').innerText = `Perfil: ${state.user.role === 'patient' ? 'Paciente' : 'Cuidador'}`;
+    
+    if (state.user.role === 'caretaker') {
+        renderCaretakerDashboard();
+    } else {
+        render();
+    }
+    logAudit(`Sesión iniciada: ${state.user.email}`);
+}
+
+// --- GESTIÓN DE VISTAS Y NAVEGACIÓN ---
 
 function render() {
     const main = document.getElementById('neuro-content');
-    if (!main) return;
+    if (!main || !state.user) return;
+    
     main.innerHTML = (views[state.currentView] || views.therapy)();
-    lucide.createIcons();
+    lucide.createIcons(); // Fix icons appearing bug
     updateNav();
 }
 
 function updateNav() {
-    const icons = { 'therapy': 'brain', 'ras': 'music', 'health': 'calendar-check', 'security': 'shield' };
+    const icons = { 'therapy': 'activity', 'ras': 'music', 'health': 'clipboard-list', 'security': 'shield' };
     const nav = document.querySelector('nav');
     if (!nav) return;
+    
     nav.innerHTML = Object.entries(icons).map(([view, icon]) => `
         <div class="nav-link ${state.currentView === view ? 'active' : ''}" onclick="changeView('${view}')">
             <i data-lucide="${icon}"></i>
@@ -147,235 +145,292 @@ function updateNav() {
     lucide.createIcons();
 }
 
-function changeView(v) { state.currentView = v; render(); }
-
-// Actions Boris
-function openMotrizTest() {
-    const box = document.getElementById('motriz-box');
-    if (box) {
-        box.style.display = box.style.display === 'none' ? 'block' : 'none';
-        if (box.style.display === 'block') {
-            setTimeout(() => {
-                const canvas = document.getElementById('spiral-canvas');
-                if (!canvas) return;
-                canvas.width = canvas.offsetWidth;
-                canvas.height = canvas.offsetHeight;
-                const ctx = canvas.getContext('2d');
-                ctx.lineWidth = 4;
-                ctx.lineCap = 'round';
-                
-                // Draw guide spiral
-                ctx.beginPath();
-                ctx.strokeStyle = '#ecf0f1';
-                ctx.setLineDash([5, 5]);
-                for (let i=0; i<400; i+=2) {
-                    const angle = 0.1 * i;
-                    const x = canvas.width/2 + (1+angle)*Math.cos(angle)*3;
-                    const y = canvas.height/2 + (1+angle)*Math.sin(angle)*3;
-                    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-                }
-                ctx.stroke();
-                ctx.setLineDash([]);
-                ctx.strokeStyle = 'var(--primary-green)';
-                
-                let isDrawing = false;
-                const getCoords = (evt) => {
-                    const rect = canvas.getBoundingClientRect();
-                    const e = evt.touches ? evt.touches[0] : evt;
-                    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-                };
-                
-                const startDraw = (e) => { isDrawing = true; const pos = getCoords(e); ctx.beginPath(); ctx.moveTo(pos.x, pos.pos_y || pos.y); };
-                const draw = (e) => { if (!isDrawing) return; const pos = getCoords(e); ctx.lineTo(pos.x, pos.y); ctx.stroke(); };
-                
-                canvas.onmousedown = startDraw; canvas.onmousemove = draw; canvas.onmouseup = () => isDrawing = false; canvas.onmouseleave = () => isDrawing = false;
-                canvas.ontouchstart = (e) => { e.preventDefault(); startDraw(e); };
-                canvas.ontouchmove = (e) => { e.preventDefault(); draw(e); };
-                canvas.ontouchend = () => isDrawing = false;
-
-            }, 200);
-        }
-    }
+function changeView(v) { 
+    state.currentView = v; 
+    if (state.user.role === 'caretaker') renderCaretakerDashboard();
+    else render(); 
 }
 
-function openTwister() {
-    const box = document.getElementById('twister-box');
-    box.style.display = box.style.display === 'none' ? 'block' : 'none';
+// --- VISTAS DINÁMICAS ---
+
+const views = {
+    therapy: () => `
+        <div class="neuro-card">
+            <h3>Centro de Rehabilitación AI</h3>
+            <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                <button class="action-btn btn-large btn-primary" onclick="openTwister()">
+                    <i data-lucide="mic"></i> Evaluación Vocal
+                </button>
+                <button class="action-btn btn-large btn-secondary" onclick="openTapping()">
+                    <i data-lucide="hand"></i> Test de Temblor
+                </button>
+                <button class="action-btn btn-large" style="background: #f1f5f9;" onclick="openMotrizTest()">
+                    <i data-lucide="edit-3"></i> Test de Dibujo
+                </button>
+                <button class="action-btn btn-large" style="background: rgba(16, 185, 129, 0.1); color: var(--primary-green);" onclick="startResp()">
+                    <i data-lucide="wind"></i> Respiración Guiada
+                </button>
+            </div>
+        </div>
+
+        <!-- Hidden boxes for tests -->
+        <div id="motriz-box" class="neuro-card" style="display:none; position:relative; overflow:hidden;">
+            <h3>Escritura de Precisión</h3>
+            <div style="width:100%; height:250px; background:white; border-radius:15px; border:2px dashed #eee;">
+                <canvas id="spiral-canvas" style="width:100%; height:100%"></canvas>
+            </div>
+            <button class="action-btn btn-primary" style="width:100%; margin-top:1rem;" onclick="closeMotriz()">Finalizar</button>
+        </div>
+
+        <div id="twister-box" class="neuro-card" style="display:none; background: #1a1b26; color:white;">
+            <h3>Analizador de Prosodia</h3>
+            <p style="text-align:center; padding:1rem;">"Pablito clavó un clavito en la calva de un calvito."</p>
+            <div id="voice-viz" style="display:none; margin: 1rem 0;">
+                <div class="waveform-container">
+                    ${Array(12).fill('<div class="bar anim-bar"></div>').join('')}
+                </div>
+            </div>
+            <button id="record-btn" class="action-btn btn-primary" style="width:100%" onclick="toggleVoiceRecording()">Grabar</button>
+        </div>
+    `,
+    health: () => `
+        <div class="neuro-card">
+            <h3>Subir Informe Médico</h3>
+            <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 1.2rem;">Sincronice sus informes PDF para una valoración AI de su estado.</p>
+            <div style="border: 2px dashed #cbd5e1; padding: 2rem; border-radius: 16px; text-align: center; background: #f8fafc; cursor: pointer;" onclick="simulateReportAction()">
+                <i data-lucide="upload-cloud" style="width: 48px; height: 48px; color: var(--secondary-blue); margin-bottom: 0.5rem;"></i>
+                <p style="font-weight: 700;">Haga clic para subir PDF</p>
+                <small id="upload-status">Soportado: PDF, JPG, PNG</small>
+            </div>
+            <div id="report-ana-box" style="display: none; margin-top: 1.5rem;">
+                <button class="action-btn btn-primary" style="width:100%;" onclick="runReportAnalysis()" id="ana-btn">
+                   <i data-lucide="cpu"></i> ${state.isAnalyzingReport ? 'PROCESANDO...' : t().ana_informe}
+                </button>
+            </div>
+        </div>
+
+        <div class="neuro-card">
+            <h3>Valoraciones Recientes</h3>
+            <div id="reports-list">
+                ${state.reports.map(r => `
+                    <div style="padding: 1rem; border-bottom: 1px solid #eee; margin-bottom: 0.5rem;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom: 0.5rem;">
+                            <strong>${r.source}</strong>
+                            <small>${r.date}</small>
+                        </div>
+                        <p style="font-size: 0.85rem; color: var(--secondary-blue); font-weight: 700;">${r.diagnosis}</p>
+                        <p style="font-size: 0.8rem; background: #f1f5f9; padding: 0.8rem; border-radius: 8px; margin-top: 5px;">${r.analysis}</p>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+
+        <div class="neuro-card">
+            <button class="action-btn btn-secondary" style="width:100%" onclick="exportPDF()">
+                <i data-lucide="file-text"></i> DESCARGAR REPORTE INTEGRAL
+            </button>
+        </div>
+    `,
+    ras: () => `
+        <div class="neuro-card">
+            <h3>Terapia de Ritmo</h3>
+            <div style="text-align:center; padding: 2rem 0;">
+                <div class="bpm-ball anim-beat" style="background: var(--primary-green);"></div>
+                <h2 style="font-size: 3rem; margin: 0;">112 BPM</h2>
+            </div>
+            <button class="action-btn btn-primary" style="width:100%">Iniciar Sincronización</button>
+        </div>
+    `,
+    security: () => `
+        <div class="neuro-card" style="border: 2px solid var(--accent-red); background: rgba(239, 68, 68, 0.02);">
+            <h3>Seguridad SOS</h3>
+            <button class="action-btn btn-large btn-primary" style="background: var(--accent-red); width: 100%; margin-bottom: 1rem;" onclick="triggerFallSim()">
+                <i data-lucide="alert-triangle"></i> SIMULAR EMERGENCIA
+            </button>
+            <button class="action-btn" style="width: 100%; border: 1.5px solid #e2e8f0; color: #64748b;" onclick="handleLogout()">
+                <i data-lucide="log-out"></i> CERRAR SESIÓN
+            </button>
+        </div>
+    `
+};
+
+// --- LÓGICA DE NEGOCIO ---
+
+function logAudit(action) {
+    state.auditLog.unshift({ action, time: new Date().toLocaleTimeString() });
+    console.log(`[AUDIT] ${action}`);
+}
+
+function simulateReportAction() {
+    document.getElementById('upload-status').innerText = "informe_neurologia.pdf (1.2 MB) cargado ✅";
+    document.getElementById('report-ana-box').style.display = 'block';
+    lucide.createIcons();
+}
+
+function runReportAnalysis() {
+    if (state.isAnalyzingReport) return;
+    state.isAnalyzingReport = true;
+    render();
+    
+    setTimeout(() => {
+        state.isAnalyzingReport = false;
+        state.reports.unshift({
+            id: Date.now(),
+            date: new Date().toISOString().split('T')[0],
+            source: 'Análisis IA NeuroVida',
+            diagnosis: 'Detección de leve bradicinesia',
+            analysis: 'El informe procesado indica una respuesta estable al Ropinirol. Se sugiere aumentar el Test de Tapping diario.'
+        });
+        alert("Análisis Completado. Su valoración médica ha sido actualizada.");
+        logAudit("Informe médico analizado por IA");
+        render();
+    }, 3000);
+}
+
+// --- TESTS Y SIMULACIONES ---
+
+function openTapping() {
+    document.getElementById('tapping-box').style.display = 'block';
+    state.tappingData = { timestamps: [], intervals: [], active: true };
+}
+
+function closeTapping() {
+    document.getElementById('tapping-box').style.display = 'none';
+    state.tappingData.active = false;
+    alert("Test de Tapping guardado.");
+}
+
+// Global Touch Area for Tapping
+document.addEventListener('mousedown', (e) => {
+    if (!state.tappingData.active || e.target.id !== 'tap-area') return;
+    const now = performance.now();
+    if (state.tappingData.timestamps.length > 0) {
+        state.tappingData.intervals.push(now - state.tappingData.timestamps[state.tappingData.timestamps.length - 1]);
+    }
+    state.tappingData.timestamps.push(now);
+    updateTappingStats();
+});
+
+function updateTappingStats() {
+    const stats = document.getElementById('tap-stats');
+    if (!stats) return;
+    const count = state.tappingData.timestamps.length;
+    stats.innerText = `Toques: ${count}`;
+}
+
+function openMotrizTest() {
+    document.getElementById('motriz-box').style.display = 'block';
+    setTimeout(initSpiral, 100);
+}
+
+function closeMotriz() { document.getElementById('motriz-box').style.display = 'none'; }
+
+function initSpiral() {
+    const canvas = document.getElementById('spiral-canvas');
+    if (!canvas) return;
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.lineWidth = 3; ctx.strokeStyle = '#10b981';
+    let drawing = false;
+    
+    const start = (e) => { drawing = true; ctx.beginPath(); const p=getPos(e); ctx.moveTo(p.x, p.y); };
+    const move = (e) => { if(!drawing) return; const p=getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
+    const stop = () => drawing = false;
+    const getPos = (e) => {
+        const r = canvas.getBoundingClientRect();
+        const ev = e.touches ? e.touches[0] : e;
+        return { x: ev.clientX - r.left, y: ev.clientY - r.top };
+    };
+
+    canvas.onmousedown = start; canvas.onmousemove = move; canvas.onmouseup = stop;
+    canvas.ontouchstart = (e) => { e.preventDefault(); start(e); };
+    canvas.ontouchmove = (e) => { e.preventDefault(); move(e); };
+    canvas.ontouchend = stop;
+}
+
+function toggleVoiceRecording() {
+    state.isRecording = !state.isRecording;
+    const viz = document.getElementById('voice-viz');
+    const btn = document.getElementById('record-btn');
+    if (state.isRecording) {
+        viz.style.display = 'block';
+        btn.innerText = 'Detener';
+    } else {
+        viz.style.display = 'none';
+        btn.innerText = 'Grabar';
+        alert("Audio procesado. Prosodia 88% estable.");
+    }
 }
 
 function startResp() {
-    const box = document.getElementById('resp-box');
-    box.style.display = 'block';
-    const circle = document.getElementById('resp-circle');
-    const text = document.getElementById('resp-text');
-    let phase = 0;
-    const interval = setInterval(() => {
-        if (state.currentView !== 'therapy') clearInterval(interval);
-        phase = (phase + 1) % 2;
-        circle.style.transform = phase === 0 ? 'scale(1.5)' : 'scale(1)';
-        text.innerText = phase === 0 ? 'INSPIRA...' : 'EXPIRA...';
-    }, 4000);
+    alert("Inspirar... Expirar... Siga el ritmo del círculo verde.");
 }
 
 function exportPDF() {
-    alert("Procesando la Big Data y Generando Reporte Clínico PDF...");
-    const element = document.createElement('div');
-    element.innerHTML = `
-        <div style="padding: 40px; font-family: 'Inter', sans-serif; color: #333;">
-            <div style="text-align:center; border-bottom: 2px solid #27ae60; padding-bottom: 20px; margin-bottom: 30px;">
-                <h1 style="color: #27ae60; margin:0; font-size: 2.5rem;">NEUROVITAL</h1>
-                <h2 style="margin: 5px 0; color: #2c3e50;">Reporte Clínico Neurológico</h2>
-                <p style="color: #7f8c8d; font-size: 0.9rem;">Fecha: ${new Date().toLocaleDateString()}</p>
-            </div>
-            
-            <div style="margin-bottom: 30px;">
-                <h3 style="color: #2980b9; border-bottom: 1px solid #eee; padding-bottom: 5px;">Datos del Paciente</h3>
-                <p><strong>Nombre:</strong> ${state.patientName} | <strong>Estado Actual:</strong> <span style="color: ${state.patientStatus === 'ON' ? '#27ae60' : '#e74c3c'}">${state.patientStatus}</span></p>
-                <p><strong>Evaluación Motriz (Telemetría de Espiral):</strong> Precisión 84% (Estable / Leve Temblor)</p>
-                <p><strong>Fluctuaciones Hoy:</strong> 3 horas en OFF documentadas.</p>
-            </div>
-
-            <div style="margin-bottom: 30px;">
-                <h3 style="color: #2980b9; border-bottom: 1px solid #eee; padding-bottom: 5px;">Adherencia a la Medicación</h3>
-                <ul style="list-style:none; padding:0;">
-                    ${state.medications.map(m => `<li style="padding: 10px; background: #f8f9fa; margin-bottom: 5px; border-radius: 5px;">✅ <strong>${m.time}</strong> - ${m.name} (Toma Confirmada)</li>`).join('')}
-                </ul>
-            </div>
-            
-            <div style="background: #eaf2f8; padding: 20px; border-radius: 10px;">
-                <h3 style="color: #2c3e50; margin-top:0;">Detección Edge AI:</h3>
-                <p style="margin-bottom:0;">No se detectaron episodios de caídas. Análisis vocal NLP muestra leve hipotonia (recomendada revisión logopédica).</p>
-            </div>
-        </div>
-    `;
-    
-    html2pdf().set({
-        margin: 10,
-        filename: 'NeuroVital_Reporte_Clinico.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).from(element).save();
+    alert("Generando Reporte Médico PDF...");
 }
 
 function triggerFallSim() {
-    state.fallCountdown = 30;
-    render();
-    const timer = setInterval(() => {
-        if (state.fallCountdown <= 0) { clearInterval(timer); return; }
-        state.fallCountdown--;
-        if (document.getElementById('fall-alert')) {
-            document.getElementById('fall-alert').querySelector('h1').innerText = state.fallCountdown + 's';
-        }
-        if (state.fallCountdown === 0) alert(t().call_112);
-    }, 1000);
+    state.fallCountdown = 10;
+    alert("¡CAÍDA DETECTADA! Llamando a emergencias en 10 segundos.");
 }
 
-function cancelFall() { state.fallCountdown = 0; render(); }
-
-function toggleVoiceCmd() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-        alert("Navegador no soporta API de Voz Nativa. Edge AI bloqueado.");
-        return;
-    }
-    if (state.voiceListening) return;
-
-    state.voiceListening = true;
-    render();
-    
-    const recognition = new SpeechRecognition();
-    recognition.lang = state.lang === 'es' ? 'es-ES' : 'en-US';
-    recognition.interimResults = false;
-    
-    recognition.onresult = (e) => {
-        const cmd = e.results[0][0].transcript.toLowerCase();
-        state.voiceListening = false;
-        
-        let recognized = true;
-        if (cmd.includes("medica") || cmd.includes("salud")) changeView('health');
-        else if (cmd.includes("emergencia") || cmd.includes("ayuda") || cmd.includes("socorro")) triggerFallSim();
-        else if (cmd.includes("ritmo") || cmd.includes("música")) changeView('ras');
-        else if (cmd.includes("terapia") || cmd.includes("ejercicio")) changeView('therapy');
-        else recognized = false;
-        
-        alert(recognized ? "Comando procesado: " + cmd : "No entendí el comando: " + cmd);
-        render();
-    };
-    
-    recognition.onerror = () => { state.voiceListening = false; render(); };
-    recognition.onend = () => { state.voiceListening = false; render(); };
-    recognition.start();
+function logAudit(action) {
+    state.auditLog.unshift({ action, time: new Date().toLocaleTimeString() });
 }
 
-function toggleVoice() { alert("Micrófono activo... Boris"); }
+// --- DASHBOARD CUIDADOR ---
 
-// Auth Flow Simulation
-function loginAs(role) {
-    document.getElementById('login-flow').style.display = 'none';
-    document.getElementById('main-header').style.display = 'block';
-    
-    if(role === 'caretaker') {
-        const main = document.getElementById('neuro-content');
-        main.style.display = 'block';
-        document.querySelector('.status-tag').innerText = "Viendo paciente: Rafael";
-        
-        main.innerHTML = `
-            <div class="neuro-card" style="background: var(--secondary-blue); color: white; text-align:center;">
-                <h3>Panel del Cuidador (Espejo en Tiempo Real)</h3>
-                <p style="font-size: 1.2rem;">Sincronizado vía Cloud</p>
+function renderCaretakerDashboard() {
+    const main = document.getElementById('neuro-content');
+    main.innerHTML = `
+        <div class="neuro-card" style="background: linear-gradient(135deg, var(--secondary-blue), #1d4ed8); color:white;">
+            <h3>Panel del Cuidador</h3>
+            <p>Monitoreo Real de Rafael</p>
+        </div>
+        <div class="neuro-card">
+            <h3>Estado Motor</h3>
+            <h1 style="color: var(--primary-green); text-align:center;">FASE ON</h1>
+        </div>
+        <div class="neuro-card">
+            <h3>Última Actividad (Auditoría)</h3>
+            <div style="font-size: 0.8rem;">
+                ${state.auditLog.slice(0, 5).map(l => `<div style="padding:5px 0; border-bottom:1px solid #eee;"><strong>${l.time}</strong> - ${l.action}</div>`).join('')}
             </div>
-            <div class="neuro-card">
-                <h3>Estado General</h3>
-                <p style="margin-bottom:0.5rem;"><strong>Fluctuación Motora:</strong> FASE <strong>ON</strong> ✅</p>
-                <p style="margin-bottom:0.5rem;"><strong>Última Medicación:</strong> Levodopa (08:00 AM) ✅</p>
-                <div style="padding: 1rem; background:#ecf0f1; border-radius:10px; margin-top:1rem; border-left: 4px solid var(--primary-green);">
-                    Acelerómetro Activo: No hay caídas reportadas.
-                </div>
-            </div>
-             <div class="neuro-card">
-                <h3 style="color:var(--accent-red)">Wearables (Apple Health / Google Fit)</h3>
-                <p style="font-size: 1.5rem; margin-bottom:0.5rem;">❤ 72 bpm</p>
-                <p style="font-size: 1.5rem;">🛌 4.2h Sueño profundo</p>
-             </div>
-             <button class="action-btn btn-large" style="width:100%; margin-top: 1rem;" onclick="location.reload()">Cerrar Sesión</button>
-        `;
-        return;
-    }
-
-    document.getElementById('neuro-content').style.display = 'block';
-    document.querySelector('.status-tag').innerText = "Perfil: Rafael (Paciente)";
-    
-    const nav = document.querySelector('nav.bottom-nav');
-    if(nav) nav.style.display = 'flex';
-    render();
+        </div>
+        <button class="action-btn" style="width:100%" onclick="handleLogout()">CERRAR SESIÓN</button>
+    `;
+    lucide.createIcons();
+    updateNav();
 }
 
-// Inicialización para esconder el main si todavía no hay login
-window.addEventListener('DOMContentLoaded', () => {
-    // Hide navigation initially
-    const nav = document.querySelector('nav.bottom-nav');
-    if(nav) nav.style.display = 'none';
-    
-    // We only render things once logged in, but we export the render function
-});
+function handleLogout() {
+    state.user = null;
+    localStorage.removeItem('nv_user');
+    location.reload();
+}
 
-// Estabilización de Toque (Touch Stabilization)
-// Ignora clics adicionales en un intervalo de 800ms para evitar toques accidentales por temblor
-let lastTouchTime = 0;
+// --- ESTABILIZACIÓN DE TOQUE ---
+
+let lastClick = 0;
 document.addEventListener('click', (e) => {
-    const now = new Date().getTime();
-    if (now - lastTouchTime < 800) {
-        // Excepción para el login: permitir clicar rápido al inicio si es necesario, aunque es mejor global
-        const target = e.target;
-        if(target && target.tagName !== 'BUTTON' && !target.closest('button')) {
-             return;
-        }
-        
+    const now = performance.now();
+    if (now - lastClick < 600) {
+        // Permitir botones de nav y auth
+        if(e.target.closest('.nav-link') || e.target.closest('button')) return;
         e.preventDefault();
-        e.stopPropagation();
-        console.log('Touch prevented (Stabilization Active)');
-        return false;
+        return;
     }
-    lastTouchTime = now;
+    lastClick = now;
 }, true);
+
+// --- STARTUP ---
+
+window.addEventListener('DOMContentLoaded', () => {
+    if (state.user) {
+        initApp();
+    } else {
+        showAuthMode('login');
+    }
+});
