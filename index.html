@@ -8,117 +8,221 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Outfit:wght@800;900&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
     <div class="app-container">
-        <!-- Main Application Header -->
-        <header id="main-header" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <div class="logo">NEUROVIDA</div>
-                    <p>Salud Digital de Alta Precisión</p>
+
+        <!-- ── HEADER PRINCIPAL ── -->
+        <header id="main-header" style="display:none;">
+            <div class="app-bar-top">
+                <div style="width:44px;display:flex;align-items:center;flex-shrink:0;">
+                    <button id="back-btn" class="back-btn" onclick="handleBack()" style="display:none;" aria-label="Volver">
+                        <i data-lucide="chevron-left"></i>
+                    </button>
                 </div>
-                <button class="action-btn" style="padding: 0.5rem 1rem; font-size: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid var(--border-glass);" onclick="handleLogout()">
-                    <i data-lucide="log-out" style="width: 14px; height: 14px; vertical-align: middle;"></i> Salir
-                </button>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;line-height:1.2;text-align:center;">
+                    <div class="logo" style="font-size:1.4rem;">NEUROVIDA</div>
+                    <span id="view-title"></span>
+                </div>
+                <div style="display:flex;gap:0.5rem;align-items:center;flex-shrink:0;">
+                    <div id="lang-toggle-container"></div>
+                    <button class="header-logout-btn" onclick="handleLogout()" title="Cerrar sesión" aria-label="Cerrar sesión" style="width:36px;height:36px;min-width:36px;min-height:36px;">
+                        <i data-lucide="log-out" style="width:18px;height:18px;"></i>
+                    </button>
+                </div>
             </div>
             <div class="status-row">
-                <span class="status-tag" id="user-role-tag">Perfil: Paciente</span>
-                <span class="status-tag" id="current-state-tag">Estado: ON</span>
+                <p class="header-greeting" id="user-greeting" style="margin:0;font-size:0.8rem;"></p>
+                <div style="display:flex;gap:0.5rem;">
+                    <span class="status-tag" id="user-role-tag">Paciente</span>
+                    <span class="status-tag" id="current-state-tag">FASE ON</span>
+                </div>
             </div>
         </header>
 
-        <!-- Dynamic Content Area -->
-        <main id="neuro-content" style="display: none;">
-            <!-- Content injected via app.js -->
-        </main>
+        <!-- ── CONTENIDO DINÁMICO ── -->
+        <main id="neuro-content" style="display:none;"></main>
 
-        <!-- Tapping Test Overlay -->
-        <div id="tapping-box" class="neuro-card" style="display:none; text-align: center; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 3000; width: 90%; max-width: 400px; background: white;">
-            <h3>Test de Tapping</h3>
-            <p style="margin-bottom: 1rem;">Mida su estabilidad motriz pulsando rítmicamente el botón.</p>
-            <div id="tap-area" style="width: 140px; height: 140px; background: var(--secondary-blue); border-radius: 50%; margin: 1.5rem auto; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; font-weight: 900; cursor: pointer; user-select: none; box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);">
+        <!-- ── OVERLAY TEST TAPPING ── -->
+        <div id="tapping-box" class="neuro-card"
+             style="display:none;text-align:center;position:fixed;top:50%;left:50%;
+                    transform:translate(-50%,-50%);z-index:3000;width:90%;max-width:520px;
+                    background:var(--card-bg);box-shadow:0 0 0 100vmax rgba(0,0,0,0.6);">
+            <h3 data-i18n="tap_title">Test de Tapping</h3>
+            <p style="font-size:0.85rem;color:rgba(148,163,184,0.8);margin-bottom:1rem;" data-i18n="tap_inst">
+                Pulse el círculo rítmicamente para medir velocidad e irregularidad motora.
+            </p>
+            <div id="tap-area"
+                 style="width:140px;height:140px;background:linear-gradient(135deg,var(--secondary-blue),#1d4ed8);
+                        border-radius:50%;margin:1.2rem auto;display:flex;align-items:center;
+                        justify-content:center;color:white;font-size:1.6rem;font-weight:900;
+                        cursor:pointer;user-select:none;box-shadow:0 10px 30px rgba(59,130,246,0.4);
+                        transition:transform 0.1s;border:3px solid rgba(255,255,255,0.15);"
+                 onmousedown="this.style.transform='scale(0.92)'"
+                 onmouseup="this.style.transform='scale(1)'"
+                 ontouchstart="this.style.transform='scale(0.92)'"
+                 ontouchend="this.style.transform='scale(1)'">
                 TAP
             </div>
-            <div id="tap-stats" style="font-family: var(--font-accent); font-size: 1.2rem; margin: 1rem 0;">
-                Inicie el test...
+            <div id="tap-stats"
+                 style="font-family:var(--font-accent);font-size:1rem;margin:1rem 0;
+                        min-height:50px;display:flex;align-items:center;justify-content:center;">
             </div>
-            <button class="action-btn btn-primary" style="width: 100%;" onclick="closeTapping()">Terminar</button>
+            <button class="action-btn btn-primary" style="width:100%;" onclick="closeTapping()" data-i18n="tap_finish">
+                Terminar y Guardar
+            </button>
         </div>
 
-        <!-- AUTHENTICATION SYSTEM -->
-        <main id="auth-flow" style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 80vh; text-align: center;">
-            <div id="login-form-box" class="neuro-card" style="width: 100%; max-width: 400px;">
-                <h1 class="logo" style="color: var(--primary-green); font-size: 2.5rem; margin-bottom: 1rem;">NEUROVIDA</h1>
-                <p style="margin-bottom: 2rem; color: #64748b;">Ingrese a su ecosistema de salud</p>
-                
-                <div style="display: flex; flex-direction: column; gap: 1rem; text-align: left;">
+        <!-- ── FLUJO DE AUTENTICACIÓN ── -->
+        <main id="auth-flow"
+              style="display:flex;flex-direction:column;justify-content:center;
+                     align-items:center;text-align:center;">
+
+            <!-- LOGIN -->
+            <div id="login-form-box" class="neuro-card" style="width:100%;max-width:520px;">
+                <img src="logoapp.png" alt=""
+                     style="width:170px;height:170px;border-radius:50%;object-fit:cover;
+                            display:block;margin:0 auto 1.6rem auto;
+                            box-shadow:0 4px 20px rgba(0,255,255,0.2),0 0 50px rgba(0,242,255,0.08),0 12px 35px rgba(0,0,0,0.55);">
+                <h1 class="logo" style="color:var(--accent-cyan);font-size:2.5rem;margin-bottom:0.5rem;">NEUROVIDA</h1>
+                <p style="margin-bottom:1.8rem;color:rgba(148,163,184,0.7);font-size:0.9rem;" data-i18n="tagline">
+                    Salud Digital de Alta Precisión
+                </p>
+                <div style="display:flex;flex-direction:column;gap:1rem;text-align:left;">
                     <div>
-                        <label style="font-weight: 700; font-size: 0.9rem;">Correo Electrónico</label>
-                        <input type="email" id="login-email" placeholder="ejemplo@correo.com" style="width: 100%; padding: 1rem; border-radius: 12px; border: 1.5px solid #e2e8f0; margin-top: 0.5rem; font-size: 1rem;">
+                        <label style="font-weight:700;font-size:0.85rem;color:rgba(241,245,249,0.8);" data-i18n="login_email">Correo Electrónico</label>
+                        <input type="email" id="login-email" data-i18n-ph="login_email"
+                               placeholder="ejemplo@correo.com"
+                               style="width:100%;padding:1rem;border-radius:12px;border:1.5px solid rgba(255,255,255,0.1);margin-top:0.5rem;font-size:1rem;">
                     </div>
                     <div>
-                        <label style="font-weight: 700; font-size: 0.9rem;">Contraseña</label>
-                        <input type="password" id="login-pass" placeholder="••••••••" style="width: 100%; padding: 1rem; border-radius: 12px; border: 1.5px solid #e2e8f0; margin-top: 0.5rem; font-size: 1rem;">
+                        <label style="font-weight:700;font-size:0.85rem;color:rgba(241,245,249,0.8);" data-i18n="login_pass">Contraseña</label>
+                        <input type="password" id="login-pass" placeholder="••••••••"
+                               style="width:100%;padding:1rem;border-radius:12px;border:1.5px solid rgba(255,255,255,0.1);margin-top:0.5rem;font-size:1rem;">
                     </div>
-                    <button class="action-btn btn-primary" style="width: 100%; margin-top: 1rem;" onclick="handleLogin()">INICIAR SESIÓN</button>
+                    <button class="action-btn btn-primary" style="width:100%;margin-top:0.5rem;"
+                            onclick="handleLogin()" data-i18n="login_btn">INICIAR SESIÓN</button>
                 </div>
-                
-                <div style="margin-top: 1.5rem; font-size: 0.9rem;">
-                    <a href="#" onclick="showAuthMode('recover')" style="color: var(--secondary-blue); text-decoration: none;">¿Olvidó su contraseña?</a>
+                <div style="margin-top:1.2rem;font-size:0.88rem;">
+                    <a href="#" onclick="showAuthMode('recover')"
+                       style="color:var(--accent-cyan);text-decoration:none;" data-i18n="forgot_pass">
+                        ¿Olvidó su contraseña?
+                    </a>
                 </div>
-                <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid #e2e8f0;">
-                <p style="font-size: 0.9rem;">¿No tiene cuenta?</p>
-                <button class="action-btn" style="width: 100%; margin-top: 0.5rem; border: 1.5px solid var(--primary-green); color: var(--primary-green);" onclick="showAuthMode('register')">CREAR PERFIL NUEVO</button>
+                <hr style="margin:1.2rem 0;border:none;border-top:1px solid rgba(255,255,255,0.08);">
+                <p style="font-size:0.88rem;color:rgba(148,163,184,0.7);" data-i18n="no_account">¿No tiene cuenta?</p>
+                <button class="action-btn" style="width:100%;margin-top:0.5rem;border:1.5px solid var(--accent-cyan);color:var(--accent-cyan);"
+                        onclick="showAuthMode('register')" data-i18n="create_profile">CREAR PERFIL NUEVO</button>
             </div>
 
-            <!-- Registration Mode -->
-            <div id="register-form-box" class="neuro-card" style="display: none; width: 100%; max-width: 400px;">
-                <h3>Crear Nuevo Perfil</h3>
-                <div style="display: flex; flex-direction: column; gap: 1rem; text-align: left;">
-                    <input type="text" id="reg-name" placeholder="Nombre Completo" style="width: 100%; padding: 1rem; border-radius: 12px; border: 1.5px solid #e2e8f0;">
-                    <input type="email" id="reg-email" placeholder="Correo Electrónico" style="width: 100%; padding: 1rem; border-radius: 12px; border: 1.5px solid #e2e8f0;">
-                    <input type="password" id="reg-pass" placeholder="Crear Contraseña" style="width: 100%; padding: 1rem; border-radius: 12px; border: 1.5px solid #e2e8f0;">
-                    
-                    <div style="background: #f8fafc; padding: 1rem; border-radius: 12px;">
-                        <label style="display: block; font-weight: 700; margin-bottom: 0.5rem;">Tipo de Perfil</label>
-                        <select id="reg-role" style="width: 100%; padding: 0.8rem; border-radius: 10px; border: 1px solid #cbd5e1;">
-                            <option value="patient">Soy Paciente</option>
-                            <option value="caretaker">Soy Cuidador</option>
-                        </select>
+            <!-- REGISTRO -->
+            <div id="register-form-box" class="neuro-card" style="display:none;width:100%;max-width:520px;">
+                <h3 data-i18n="reg_title">Crear Nuevo Perfil</h3>
+                <div style="display:flex;flex-direction:column;gap:1rem;text-align:left;">
+                    <input type="text" id="reg-name" data-i18n="reg_name" placeholder="Nombre Completo"
+                           style="width:100%;padding:1rem;border-radius:12px;border:1.5px solid rgba(255,255,255,0.1);">
+                    <input type="email" id="reg-email" data-i18n="reg_email" placeholder="Correo Electrónico"
+                           style="width:100%;padding:1rem;border-radius:12px;border:1.5px solid rgba(255,255,255,0.1);">
+                    <input type="password" id="reg-pass" data-i18n="reg_pass" placeholder="Crear Contraseña"
+                           style="width:100%;padding:1rem;border-radius:12px;border:1.5px solid rgba(255,255,255,0.1);">
+                    <button class="action-btn btn-primary" style="width:100%;" onclick="showPrivacyModal()" data-i18n="reg_btn">REGISTRARSE</button>
+                    <button class="action-btn" style="width:100%;border:1.5px solid rgba(0,242,255,0.3);color:var(--accent-cyan);" onclick="showAuthMode('login')" data-i18n="back">VOLVER</button>
+                </div>
+            </div>
+
+            <!-- CONFIGURACIÓN DE PERFIL (POST-REGISTRO/PRIMERA VEZ) -->
+            <div id="profile-setup-box" class="neuro-card" style="display:none;width:100%;max-width:520px;">
+                <h3 data-i18n="prof_setup">Configurar Perfil</h3>
+                <p style="margin-bottom:1.2rem;font-size:0.85rem;color:rgba(148,163,184,0.8);" data-i18n="prof_desc">Complete su información básica para personalizar la experiencia.</p>
+                <div style="display:flex;flex-direction:column;gap:1rem;text-align:left;">
+                    <div>
+                        <label data-i18n="prof_age">Edad</label>
+                        <input type="number" id="prof-age" placeholder="65" style="width:100%;padding:1rem;border-radius:12px;border:1.5px solid rgba(255,255,255,0.1);margin-top:0.4rem;">
                     </div>
-
-                    <button class="action-btn btn-primary" style="width: 100%;" onclick="handleRegister()">REGISTRARSE</button>
-                    <button class="action-btn" style="width: 100%;" onclick="showAuthMode('login')">VOLVER</button>
+                    <div>
+                        <label data-i18n="prof_country">País</label>
+                        <input type="text" id="prof-country" placeholder="España" style="width:100%;padding:1rem;border-radius:12px;border:1.5px solid rgba(255,255,255,0.1);margin-top:0.4rem;">
+                    </div>
+                    <div>
+                        <label data-i18n="prof_emergency">Contacto de Emergencia (Tel)</label>
+                        <input type="tel" id="prof-emergency" placeholder="+34 600..." style="width:100%;padding:1rem;border-radius:12px;border:1.5px solid rgba(255,255,255,0.1);margin-top:0.4rem;">
+                    </div>
+                    <button class="action-btn btn-primary" style="width:100%;margin-top:0.5rem;" onclick="handleSaveProfile()" data-i18n="save_btn">GUARDAR Y CONTINUAR</button>
                 </div>
             </div>
 
-            <!-- Recovery Mode -->
-            <div id="recover-form-box" class="neuro-card" style="display: none; width: 100%; max-width: 400px;">
-                <h3>Recuperar Acceso</h3>
-                <p style="margin-bottom: 1.5rem; color: #64748b;">Le enviaremos un código de seguridad a su correo.</p>
-                <input type="email" id="recover-email" placeholder="Su correo registrado" style="width: 100%; padding: 1rem; border-radius: 12px; border: 1.5px solid #e2e8f0; margin-bottom: 1.5rem;">
-                <button class="action-btn btn-primary" style="width: 100%;" onclick="handleRecover()">ENVIAR CÓDIGO</button>
-                <button class="action-btn" style="width: 100%; margin-top: 1rem;" onclick="showAuthMode('login')">CANCELAR</button>
+            <!-- RECUPERAR -->
+            <div id="recover-form-box" class="neuro-card" style="display:none;width:100%;max-width:520px;">
+                <h3 data-i18n="rec_title">Recuperar Acceso</h3>
+                <p style="margin-bottom:1.5rem;color:rgba(148,163,184,0.7);font-size:0.88rem;" data-i18n="rec_desc">
+                    Le enviaremos un código de seguridad a su correo.
+                </p>
+                <input type="email" id="recover-email" data-i18n="rec_email" placeholder="Su correo registrado"
+                       style="width:100%;padding:1rem;border-radius:12px;border:1.5px solid rgba(255,255,255,0.1);margin-bottom:1.2rem;">
+                <button class="action-btn btn-primary" style="width:100%;" onclick="handleRecover()" data-i18n="send_code">ENVIAR CÓDIGO</button>
+                <button class="action-btn" style="width:100%;margin-top:1rem;border:1px solid rgba(255,255,255,0.1);" onclick="showAuthMode('login')" data-i18n="cancel">CANCELAR</button>
             </div>
+
         </main>
 
-        <!-- Floating SOS Button -->
-        <button id="floating-sos-btn" class="btn-sos floating-sos" style="display: none;" onclick="triggerFallSim()" title="Emergencia SOS">
+        <!-- ── OVERLAY DE PRIVACIDAD ── -->
+        <div id="privacy-overlay" onclick="hidePrivacyModal()"></div>
+
+        <!-- ── MODAL DE PRIVACIDAD ── -->
+        <div id="privacy-modal" class="neuro-card"
+             style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+                    z-index:4000;width:95%;max-width:500px;max-height:85vh;overflow-y:auto;
+                    background:var(--bg-color);border:2px solid var(--accent-cyan);
+                    box-shadow:0 30px 80px rgba(0,0,0,0.7);">
+            <h2 style="color:var(--accent-cyan);margin-bottom:1.2rem;font-family:var(--font-accent);" data-i18n="priv_title">Términos y Protección de Datos</h2>
+            <div style="font-size:0.95rem;line-height:1.7;color:rgba(241,245,249,0.9);margin-bottom:1.5rem;text-align:left;">
+                <p style="margin-bottom:1rem;padding:0.9rem;background:rgba(0,242,255,0.06);border-radius:14px;border-left:3px solid var(--accent-cyan);">
+                    <strong>NeuroVida</strong> protege su información médica bajo los estándares <strong>HIPAA</strong> y <strong>RGPD</strong>. Sus datos biométricos son cifrados localmente y nunca compartidos sin su consentimiento explícito.
+                </p>
+                <p style="margin-bottom:1rem;">Al continuar, acepta que la aplicación procese sus tests de salud para generar informes clínicos personalizados.</p>
+                <p style="font-size:0.83rem;color:rgba(148,163,184,0.75);">Puede retirar su consentimiento y exportar o eliminar sus datos en cualquier momento desde los ajustes de seguridad.</p>
+            </div>
+            <button class="action-btn btn-primary" style="width:100%;font-size:1.05rem;" onclick="acceptPrivacyAndRegister()" data-i18n="priv_accept">ACEPTAR Y CONTINUAR</button>
+            <button class="action-btn" style="width:100%;margin-top:0.8rem;border:1px solid rgba(255,255,255,0.1);" onclick="hidePrivacyModal()" data-i18n="cancel">CANCELAR</button>
+        </div>
+
+        <!-- ── BOTÓN SOS FLOTANTE ── -->
+        <button id="floating-sos-btn" class="btn-sos floating-sos" style="display:none;"
+                title="Mantén pulsado 2 segundos para activar SOS">
             <span>SOS</span>
         </button>
 
-        <!-- Bottom Navigation -->
-        <nav class="bottom-nav" style="display: none;">
-            <!-- Nav links generated by app.js -->
-        </nav>
-    </div>
+        <!-- ── DOCK DE NAVEGACIÓN ── -->
+        <nav class="bottom-nav" style="display:none;"></nav>
 
+    </div><!-- /app-container -->
+
+    <!-- ── Firebase SDK (v10 compat — sin bundler) ── -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <!-- firebase-storage: omitido — plan Spark, estrategia zero-storage -->
+    <!-- ── Chart.js — gráficas de evolución clínica ── -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <!-- ── PDF.js — extracción de texto de PDFs médicos ── -->
+    <script src="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+    <!-- ── Configuración y servicios Firebase ── -->
+    <script src="modules/firebase-config.js"></script>
+    <script src="modules/nv-firebase.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="app.js"></script>
-    <script>
-        lucide.createIcons();
-    </script>
+    <!-- ── Módulos Avanzados de IA y Accesibilidad ── -->
+    <script src="modules/nv-history.js"></script>
+    <script src="modules/nv-accessibility.js"></script>
+    <script src="modules/nv-freezing.js"></script>
+    <script src="modules/nv-voice-insights.js"></script>
+    <script src="modules/nv-predictive.js"></script>
+    <!-- ── Módulo de Informes Médicos (OCR + IA + Firestore) ── -->
+    <script src="modules/nv-reports.js"></script>
+    <!-- ── Musicoterapia Spotify (PKCE OAuth · Web Playback SDK) ── -->
+    <script src="modules/spotify-config.js"></script>
+    <script src="modules/nv-spotify.js"></script>
+    <script>lucide.createIcons();</script>
 </body>
 </html>
