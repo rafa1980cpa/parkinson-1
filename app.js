@@ -1026,26 +1026,41 @@ const views = {
             ${getContextChip('health')}
             <h3>${t('hlt_title')}</h3>
             <p class="view-sub">${t('hlt_sub')}</p>
+
+            <!-- INPUT OCULTO — el <label for> lo activa nativamente sin JS -->
             <input type="file" id="file-upload-input" accept=".pdf,.jpg,.jpeg,.png"
-                   style="display:none;" onchange="handleFileUpload(this)">
-            <div id="upload-dropzone"
-                 style="border:2px dashed rgba(0,242,255,0.25);padding:2rem;border-radius:16px;
-                        text-align:center;background:rgba(22,27,45,0.6);cursor:pointer;
-                        margin-top:1rem;transition:border-color 0.3s,background 0.3s;"
-                 onclick="triggerFileUpload()"
-                 ondragover="event.preventDefault();this.style.borderColor='rgba(0,242,255,0.6)';"
-                 ondragleave="this.style.borderColor='rgba(0,242,255,0.25)';"
-                 ondrop="event.preventDefault();this.style.borderColor='rgba(0,242,255,0.25)';
-                         handleDroppedFile(event.dataTransfer.files[0]);">
-                <i data-lucide="upload-cloud" style="width:44px;height:44px;color:var(--accent-cyan);
-                   margin-bottom:0.6rem;display:block;margin-left:auto;margin-right:auto;"></i>
-                <p style="font-weight:700;">${t('hlt_click')}</p>
-                <p id="upload-status" style="font-size:0.82rem;margin-top:0.4rem;color:rgba(148,163,184,0.65);">
-                    ${t('hlt_fmt')}
-                </p>
-            </div>
+                   style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;"
+                   onchange="handleFileUpload(this)">
+
+            <!-- DROPZONE como <label> — clic nativo + drag & drop -->
+            <label id="upload-dropzone" for="file-upload-input"
+                   class="nv-dropzone"
+                   ondragover="event.preventDefault();event.stopPropagation();_dropzoneHover(true);"
+                   ondragleave="_dropzoneHover(false);"
+                   ondrop="event.preventDefault();event.stopPropagation();_dropzoneHover(false);handleDroppedFile(event.dataTransfer.files[0]);">
+
+                <!-- Icono y texto — pointer-events:none para que el clic llegue al label -->
+                <div style="pointer-events:none;text-align:center;">
+                    <div id="dropzone-icon-wrap">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
+                             fill="none" stroke="var(--accent-cyan)" stroke-width="1.6"
+                             stroke-linecap="round" stroke-linejoin="round"
+                             style="display:block;margin:0 auto 0.75rem;">
+                            <polyline points="16 16 12 12 8 16"></polyline>
+                            <line x1="12" y1="12" x2="12" y2="21"></line>
+                            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+                        </svg>
+                    </div>
+                    <p style="font-weight:700;font-size:0.95rem;margin-bottom:0.3rem;">${t('hlt_click')}</p>
+                    <p id="upload-status" style="font-size:0.82rem;color:rgba(148,163,184,0.6);">
+                        ${t('hlt_fmt')}
+                    </p>
+                </div>
+            </label>
+
             <div id="report-ana-box" style="display:none;margin-top:1.2rem;">
-                <button class="action-btn btn-primary" style="width:100%;" onclick="runReportAnalysis()" id="ana-btn">
+                <button class="action-btn btn-primary" style="width:100%;min-height:52px;"
+                        onclick="runReportAnalysis()" id="ana-btn">
                     <i data-lucide="cpu"></i> ${t('hlt_analyze')}
                 </button>
             </div>
@@ -1924,7 +1939,8 @@ async function runReportAnalysis() {
 
     state.isAnalyzingReport = true;
 
-    // Actualizar botón sin re-render completo
+    // Spinner en dropzone + botón desactivado
+    _dropzoneSetLoading(true);
     const anaBtn = document.getElementById('ana-btn');
     if (anaBtn) {
         anaBtn.disabled = true;
@@ -1940,15 +1956,16 @@ async function runReportAnalysis() {
     try {
         // 1. Extracción OCR + análisis IA
         const { analysis } = await NVReports.analyzeFile(file, state.lang, (progress) => {
-            if (anaBtn) {
-                anaBtn.innerHTML = `
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
-                         stroke-linejoin="round"
-                         style="animation:nvSpin 1s linear infinite;flex-shrink:0;vertical-align:middle;margin-right:6px;">
-                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                    </svg>OCR ${Math.round(progress * 100)}%`;
-            }
+            const pct = Math.round(progress * 100);
+            const status = document.getElementById('upload-status');
+            if (status) status.textContent = `OCR ${pct}%`;
+            if (anaBtn) anaBtn.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+                     stroke-linejoin="round"
+                     style="animation:nvSpin 1s linear infinite;flex-shrink:0;vertical-align:middle;margin-right:6px;">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                </svg>OCR ${pct}%`;
         });
 
         // 2. Construir objeto de informe
@@ -2010,7 +2027,8 @@ async function runReportAnalysis() {
         showToast(errMsg, 'error');
     } finally {
         state.isAnalyzingReport = false;
-        state._pendingFile = null;   // Limpiar referencia al archivo
+        state._pendingFile = null;
+        _dropzoneSetLoading(false);
         if (anaBtn) {
             anaBtn.disabled = false;
             anaBtn.innerHTML = `<i data-lucide="cpu"></i> ${t('hlt_analyze')}`;
@@ -2837,9 +2855,47 @@ document.addEventListener('click', (e) => {
 // ============================================================
 // SUBIDA REAL DE ARCHIVOS
 // ============================================================
+
+// Mantener para compat con cualquier código antiguo que aún la llame
 function triggerFileUpload() {
     const input = document.getElementById('file-upload-input');
     if (input) input.click();
+}
+
+// Hover visual del dropzone durante el drag
+function _dropzoneHover(on) {
+    const dz = document.getElementById('upload-dropzone');
+    if (!dz) return;
+    dz.style.borderColor  = on ? 'rgba(0,242,255,0.7)'  : 'rgba(0,242,255,0.25)';
+    dz.style.background   = on ? 'rgba(0,242,255,0.07)' : 'rgba(22,27,45,0.6)';
+    dz.style.transform    = on ? 'scale(1.01)'           : 'scale(1)';
+}
+
+// Spinner de "Analizando..." dentro del dropzone
+function _dropzoneSetLoading(loading) {
+    const wrap = document.getElementById('dropzone-icon-wrap');
+    if (!wrap) return;
+    if (loading) {
+        wrap.innerHTML = `
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
+                 stroke="var(--primary-green)" stroke-width="2" stroke-linecap="round"
+                 stroke-linejoin="round"
+                 style="display:block;margin:0 auto 0.75rem;animation:nvSpin 1s linear infinite;">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+            </svg>`;
+        const status = document.getElementById('upload-status');
+        if (status) status.textContent = t('hlt_analyzing');
+    } else {
+        wrap.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
+                 fill="none" stroke="var(--accent-cyan)" stroke-width="1.6"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 style="display:block;margin:0 auto 0.75rem;">
+                <polyline points="16 16 12 12 8 16"></polyline>
+                <line x1="12" y1="12" x2="12" y2="21"></line>
+                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+            </svg>`;
+    }
 }
 
 function handleFileUpload(input) {

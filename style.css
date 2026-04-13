@@ -1175,6 +1175,32 @@ label {
 }
 
 /* ══════════════════════════════════════════════════════════════
+   DROPZONE — SUBIDA DE INFORMES MÉDICOS
+   ══════════════════════════════════════════════════════════════ */
+
+/* <label> como dropzone — cursor pointer nativo, sin JS para el clic */
+.nv-dropzone {
+    display: block;
+    border: 2px dashed rgba(0, 242, 255, 0.28);
+    padding: 2.2rem 1.5rem;
+    border-radius: 18px;
+    text-align: center;
+    background: rgba(22, 27, 45, 0.55);
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: border-color 0.25s, background 0.25s, transform 0.2s;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.nv-dropzone:hover {
+    border-color: rgba(0, 242, 255, 0.55);
+    background: rgba(0, 242, 255, 0.04);
+}
+.nv-dropzone:active {
+    transform: scale(0.99);
+}
+
+/* ══════════════════════════════════════════════════════════════
    DASHBOARD DE EVOLUCIÓN CLÍNICA
    ══════════════════════════════════════════════════════════════ */
 
