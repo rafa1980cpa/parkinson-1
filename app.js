@@ -410,6 +410,7 @@ const state = {
     medicalReports: JSON.parse(localStorage.getItem('nv_medical_reports') || '[]'),
     evolutionSyncing: false,
     evolutionFilter: 'all',
+    _pendingFile: null,
     reportsSyncing: false,
     spotifyVolume: parseFloat(localStorage.getItem('nv_spot_vol') || '0.8')
 };
@@ -756,6 +757,9 @@ async function _syncMedicalReportsFromFirestore() {
         console.warn('[Health] Sync informes fallido:', e);
     } finally {
         state.reportsSyncing = false;
+        // Quitar spinner del DOM sin re-render completo
+        const badge = document.getElementById('nv-reports-sync-badge');
+        if (badge) badge.remove();
         _renderMedicalReportsList();
     }
 }
@@ -970,7 +974,7 @@ const views = {
 
         // ── Spinner de sincronización ──
         const reportsSyncBadge = state.reportsSyncing ? `
-        <div style="display:flex;align-items:center;gap:0.55rem;padding:0.6rem 1rem;
+        <div id="nv-reports-sync-badge" style="display:flex;align-items:center;gap:0.55rem;padding:0.6rem 1rem;
                     border-radius:14px;background:rgba(0,242,255,0.05);
                     border:1px solid rgba(0,242,255,0.15);margin-bottom:0.75rem;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -1891,15 +1895,9 @@ function logAudit(action) {
 }
 
 // ── Drag-and-drop handler (receives File directly) ──────────
+// No necesitamos DataTransfer — state._pendingFile guarda la referencia real.
 function handleDroppedFile(file) {
     if (!file) return;
-    const input = document.getElementById('file-upload-input');
-    // Crear un DataTransfer para asignar el archivo al input nativo
-    try {
-        const dt = new DataTransfer();
-        dt.items.add(file);
-        if (input) input.files = dt.files;
-    } catch (_) {}
     handleFileUpload({ files: [file] });
 }
 
@@ -1907,13 +1905,16 @@ function handleDroppedFile(file) {
 async function runReportAnalysis() {
     if (state.isAnalyzingReport) return;
 
-    // Obtener el archivo del input
+    // Obtener el archivo: primero desde state._pendingFile (drag & drop),
+    // luego desde el input nativo (click). Ambos caminos convergen aquí.
     const fileInput = document.getElementById('file-upload-input');
-    const file = fileInput && fileInput.files && fileInput.files[0];
+    const file = state._pendingFile
+              || (fileInput && fileInput.files && fileInput.files[0]);
     if (!file) {
         showToast(t('hlt_no_file'), 'error');
         return;
     }
+    console.log('[NVReports] Iniciando análisis de:', file.name);
     if (!window.NVReports) {
         showToast(state.lang === 'es'
             ? 'Módulo de análisis no disponible. Recargue la página.'
@@ -1967,13 +1968,9 @@ async function runReportAnalysis() {
             medicacion:           analysis.medicacion_activa,
         };
 
-        // 3. Subir archivo a Firebase Storage (best-effort, no bloqueante)
+        // 3. Zero-Storage: no se sube el archivo físico.
+        //    Solo se guarda el JSON del análisis en Firestore.
         const uid = state.user && state.user.uid ? state.user.uid : null;
-        if (uid && window.NVFirebase && NVFirebase.isReady()) {
-            NVFirebase.uploadReportFile(uid, file)
-                .then(url => { if (url) report.fileUrl = url; })
-                .catch(e => console.warn('[Health] Storage upload fallido:', e));
-        }
 
         // 4. Guardar en Firestore (async, no bloqueante)
         if (uid && window.NVFirebase && NVFirebase.isReady()) {
@@ -2001,14 +1998,19 @@ async function runReportAnalysis() {
         logAudit(state.lang === 'es' ? 'Informe médico analizado por IA' : 'Medical report analyzed by AI');
 
     } catch (e) {
-        showToast(
-            (e && e.msg) || (state.lang === 'es'
-                ? 'Error al analizar el informe. Inténtelo de nuevo.'
-                : 'Error analyzing the report. Please try again.'),
-            'error'
-        );
+        console.error('[NVReports] Error en análisis:', e);
+        const isPdfProtected = e && e.code === 'pdf_protected';
+        const isEs = state.lang === 'es';
+        const errMsg = (e && e.msg)
+            || (isPdfProtected
+                ? (isEs ? 'El PDF está protegido con contraseña.' : 'The PDF is password-protected.')
+                : (isEs
+                    ? 'Error al leer el archivo. Inténtelo de nuevo o use una imagen clara.'
+                    : 'Error reading the file. Please try again or use a clear image.'));
+        showToast(errMsg, 'error');
     } finally {
         state.isAnalyzingReport = false;
+        state._pendingFile = null;   // Limpiar referencia al archivo
         if (anaBtn) {
             anaBtn.disabled = false;
             anaBtn.innerHTML = `<i data-lucide="cpu"></i> ${t('hlt_analyze')}`;
@@ -2843,6 +2845,7 @@ function triggerFileUpload() {
 function handleFileUpload(input) {
     const file = input && (input.files ? input.files[0] : input);
     if (!file) return;
+
     const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
     if (!allowed.includes(file.type)) {
         showToast(state.lang === 'es'
@@ -2850,8 +2853,13 @@ function handleFileUpload(input) {
             : 'Invalid format. Use PDF, JPG or PNG.', 'error');
         return;
     }
-    const sizeMB = (file.size / 1024 / 1024).toFixed(2);
-    const ext    = file.name.split('.').pop().toUpperCase();
+
+    // Guardar referencia real al objeto File — crítico para drag & drop
+    state._pendingFile = file;
+    console.log('[NVReports] Archivo detectado:', file.name, '|', file.type, '|', (file.size/1024/1024).toFixed(2), 'MB');
+
+    const sizeMB   = (file.size / 1024 / 1024).toFixed(2);
+    const ext      = file.name.split('.').pop().toUpperCase();
     const statusEl = document.getElementById('upload-status');
     if (statusEl) statusEl.innerHTML =
         `<span style="color:var(--primary-green);font-weight:700;">✓ ${file.name}</span>
