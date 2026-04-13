@@ -764,50 +764,131 @@ async function _syncMedicalReportsFromFirestore() {
     }
 }
 
-// ── Renderizado parcial de la lista de valoraciones (sin re-render completo) ──
+// ── Renderizado premium de valoraciones ─────────────────────
 function _renderMedicalReportsList() {
     const container = document.getElementById('reports-list');
     if (!container) return;
-    const isEs    = state.lang === 'es';
+    const isEs   = state.lang === 'es';
     const reports = state.medicalReports;
 
     if (reports.length === 0) {
         container.innerHTML = `
-            <p style="text-align:center;color:rgba(148,163,184,0.45);padding:1.4rem 0;font-size:0.88rem;">
+            <p style="text-align:center;color:rgba(148,163,184,0.4);padding:1.6rem 0;font-size:0.88rem;">
                 ${t('hlt_no_reports')}
             </p>`;
         return;
     }
 
-    container.innerHTML = reports.slice(0, 8).map(r => {
-        const diag = r.diagnostico_principal || r.diagnosis || '—';
-        const med  = r.medicacion_activa     || r.medicacion || '';
-        const rec  = r.recomendaciones       || r.analysis   || '—';
-        const src  = r.source || r.fileName  || (isEs ? 'Informe' : 'Report');
-        const date = r.date || '';
+    container.innerHTML = reports.slice(0, 10).map(r => {
+        const diag   = r.diagnostico_principal || r.diagnosis || '—';
+        const med    = r.medicacion_activa     || r.medicacion || '';
+        const rec    = r.recomendaciones       || r.analysis   || '—';
+        const src    = r.source || r.fileName  || (isEs ? 'Informe' : 'Report');
+        const date   = r.date || '';
+        const mx     = r.metricas || {};
+        const dom    = r.dominios || {};
+        const isCrit = r.isCritical || rec.includes('⚠') || diag.toLowerCase().includes('fevi');
+        const hasAlert = rec.startsWith('⚠');
+
+        // ── Métricas pill row ──
+        const metricPills = Object.entries(mx).map(([k, v]) => {
+            const labels = { ta:'TA', fc:'FC', fevi:'FEVI', pap:'PAP', cr:'Cr', hb:'Hb', glucosa:'Glu', colesterol:'Col', sato2:'SpO₂' };
+            const colors = { fevi:'#ef4444', pap:'#ef4444', ta:'#3b82f6', fc:'#3b82f6', cr:'#f59e0b', hb:'#f59e0b', glucosa:'#f59e0b', colesterol:'#f59e0b', sato2:'#10b981' };
+            const col    = colors[k] || 'rgba(148,163,184,0.6)';
+            const label  = labels[k] || k;
+            return `<span style="display:inline-flex;align-items:center;gap:0.25rem;padding:3px 9px;border-radius:50px;
+                                  background:${col}14;border:1px solid ${col}30;font-size:0.72rem;font-weight:700;">
+                        <span style="color:rgba(148,163,184,0.55);">${label}</span>
+                        <span style="color:${col};">${v}</span>
+                    </span>`;
+        }).join('');
+
+        // ── Dominios detectados ──
+        const domRow = [
+            dom.neuro  && `<span style="font-size:0.7rem;padding:2px 8px;border-radius:50px;background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.25);color:rgba(139,92,246,0.9);">🧠 ${dom.neuro}</span>`,
+            dom.cardio && `<span style="font-size:0.7rem;padding:2px 8px;border-radius:50px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.22);color:rgba(239,68,68,0.85);">❤ ${dom.cardio}</span>`,
+            dom.psico  && `<span style="font-size:0.7rem;padding:2px 8px;border-radius:50px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.22);color:rgba(251,191,36,0.85);">🧩 ${dom.psico}</span>`,
+        ].filter(Boolean).join('');
+
+        // ── Separar alerta del texto de recomendaciones ──
+        let alertHtml = '';
+        let recText   = rec;
+        if (hasAlert) {
+            const pipeIdx = rec.indexOf(' | ');
+            if (pipeIdx > -1) {
+                alertHtml = rec.slice(0, pipeIdx);
+                recText   = rec.slice(pipeIdx + 3);
+            } else {
+                alertHtml = rec;
+                recText   = '';
+            }
+        }
+
         return `
-        <div style="padding:1rem;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:0.4rem;">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem;">
-                <strong style="font-size:0.87rem;color:rgba(241,245,249,0.9);word-break:break-word;max-width:70%;">${src}</strong>
-                <small style="color:rgba(148,163,184,0.5);font-size:0.76rem;flex-shrink:0;margin-left:8px;">${date}</small>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:0.35rem;">
-                <div style="display:flex;gap:0.5rem;align-items:flex-start;">
-                    <span style="font-size:0.72rem;font-weight:700;color:rgba(0,242,255,0.6);flex-shrink:0;min-width:80px;">${t('hlt_report_diag')}:</span>
-                    <span style="font-size:0.82rem;color:var(--accent-cyan);font-weight:700;line-height:1.4;">${diag}</span>
+        <div class="nv-report-card${isCrit ? ' nv-report-critical' : ''}">
+
+            <!-- Cabecera -->
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;margin-bottom:0.85rem;">
+                <div style="min-width:0;">
+                    <div style="font-weight:800;font-size:0.9rem;color:rgba(241,245,249,0.95);
+                                word-break:break-word;line-height:1.3;">${src}</div>
+                    ${r.estadio ? `<span style="font-size:0.7rem;font-weight:700;padding:2px 9px;border-radius:50px;
+                                               background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);
+                                               color:rgba(139,92,246,0.9);display:inline-block;margin-top:4px;">${r.estadio}</span>` : ''}
                 </div>
-                ${med ? `
-                <div style="display:flex;gap:0.5rem;align-items:flex-start;">
-                    <span style="font-size:0.72rem;font-weight:700;color:rgba(16,185,129,0.6);flex-shrink:0;min-width:80px;">💊 ${t('hlt_report_med')}:</span>
-                    <span style="font-size:0.78rem;color:rgba(16,185,129,0.85);line-height:1.4;">${med}</span>
-                </div>` : ''}
-                <div style="background:rgba(10,15,30,0.6);padding:0.6rem 0.75rem;border-radius:8px;margin-top:0.2rem;">
-                    <span style="font-size:0.72rem;font-weight:700;color:rgba(148,163,184,0.5);">${t('hlt_report_rec')}: </span>
-                    <span style="font-size:0.78rem;color:rgba(241,245,249,0.75);line-height:1.5;">${rec}</span>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
+                    <span style="font-size:0.72rem;color:rgba(148,163,184,0.45);">${date}</span>
+                    ${isCrit ? `<span style="font-size:0.65rem;font-weight:700;padding:2px 7px;border-radius:50px;
+                                              background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);
+                                              color:rgba(239,68,68,0.9);">CRÍTICO</span>` : ''}
                 </div>
             </div>
+
+            ${domRow ? `<div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.75rem;">${domRow}</div>` : ''}
+
+            <!-- Diagnóstico — rojo si crítico, cyan si normal -->
+            <div class="nv-rc-section" style="border-left-color:${isCrit ? '#ef4444' : 'var(--accent-cyan)'};">
+                <div class="nv-rc-label" style="color:${isCrit ? 'rgba(239,68,68,0.7)' : 'rgba(0,242,255,0.6)'};">
+                    🔍 ${t('hlt_report_diag')}
+                </div>
+                <div style="font-size:0.85rem;font-weight:700;color:${isCrit ? '#ef4444' : 'var(--accent-cyan)'};line-height:1.4;">
+                    ${diag}
+                </div>
+            </div>
+
+            ${alertHtml ? `
+            <div style="margin:0.6rem 0;padding:0.6rem 0.85rem;border-radius:10px;
+                        background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);">
+                <span style="font-size:0.8rem;color:rgba(239,68,68,0.9);line-height:1.5;">${alertHtml}</span>
+            </div>` : ''}
+
+            ${med ? `
+            <!-- Medicación — azul -->
+            <div class="nv-rc-section" style="border-left-color:#3b82f6;">
+                <div class="nv-rc-label" style="color:rgba(59,130,246,0.7);">💊 ${t('hlt_report_med')}</div>
+                <div style="font-size:0.8rem;color:rgba(147,197,253,0.9);line-height:1.5;">${med}</div>
+            </div>` : ''}
+
+            ${recText ? `
+            <!-- Recomendaciones — verde -->
+            <div class="nv-rc-section" style="border-left-color:#10b981;">
+                <div class="nv-rc-label" style="color:rgba(16,185,129,0.7);">✅ ${t('hlt_report_rec')}</div>
+                <div style="font-size:0.8rem;color:rgba(110,231,183,0.85);line-height:1.5;">${recText}</div>
+            </div>` : ''}
+
+            ${metricPills ? `
+            <!-- Métricas vitales -->
+            <div style="margin-top:0.65rem;">
+                <div class="nv-rc-label" style="color:rgba(148,163,184,0.45);margin-bottom:0.4rem;">
+                    📊 ${isEs ? 'Métricas Extraídas' : 'Extracted Metrics'}
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">${metricPills}</div>
+            </div>` : ''}
+
         </div>`;
     }).join('');
+
+    lucide.createIcons();
 }
 
 function changeView(v) {
@@ -1967,20 +2048,26 @@ async function runReportAnalysis() {
 
         // 2. Construir objeto de informe
         const report = {
-            id:                   Date.now(),
-            date:                 new Date().toISOString().split('T')[0],
-            source:               file.name,
-            fileName:             file.name,
-            fileType:             file.type,
-            lang:                 state.lang,
+            id:                    Date.now(),
+            date:                  new Date().toISOString().split('T')[0],
+            source:                file.name,
+            fileName:              file.name,
+            fileType:              file.type,
+            lang:                  state.lang,
             diagnostico_principal: analysis.diagnostico_principal,
-            medicacion_activa:    analysis.medicacion_activa,
-            recomendaciones:      analysis.recomendaciones,
-            // Alias para compatibilidad con exportPDF y profileSummary
-            diagnosis:            analysis.diagnostico_principal,
-            analysis:             analysis.recomendaciones,
-            medicacion:           analysis.medicacion_activa,
+            medicacion_activa:     analysis.medicacion_activa,
+            recomendaciones:       analysis.recomendaciones,
+            metricas:              analysis.metricas    || {},
+            alertas:               analysis.alertas     || [],
+            dominios:              analysis.dominios    || {},
+            estadio:               analysis.estadio     || '',
+            isCritical:            analysis.isCritical  || false,
+            // Alias compat
+            diagnosis:  analysis.diagnostico_principal,
+            analysis:   analysis.recomendaciones,
+            medicacion: analysis.medicacion_activa,
         };
+        console.log('[NVReports] Informe generado:', report);
 
         // 3. Zero-Storage: no se sube el archivo físico.
         //    Solo se guarda el JSON del análisis en Firestore.

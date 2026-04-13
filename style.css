@@ -1175,6 +1175,49 @@ label {
 }
 
 /* ══════════════════════════════════════════════════════════════
+   TARJETAS PREMIUM — VALORACIONES RECIENTES
+   ══════════════════════════════════════════════════════════════ */
+
+.nv-report-card {
+    background: linear-gradient(145deg, rgba(22,33,62,0.85), rgba(14,20,45,0.95));
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 18px;
+    padding: 1.1rem 1.2rem;
+    margin-bottom: 0.85rem;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: border-color 0.25s, box-shadow 0.25s;
+}
+.nv-report-card:hover {
+    border-color: rgba(0,242,255,0.18);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.3);
+}
+.nv-report-card.nv-report-critical {
+    border-color: rgba(239,68,68,0.28);
+    background: linear-gradient(145deg, rgba(40,15,15,0.85), rgba(20,10,10,0.95));
+}
+.nv-report-card.nv-report-critical:hover {
+    border-color: rgba(239,68,68,0.5);
+    box-shadow: 0 6px 24px rgba(239,68,68,0.12);
+}
+
+/* Sección con borde izquierdo de color */
+.nv-rc-section {
+    border-left: 3px solid var(--accent-cyan);
+    padding: 0.55rem 0.75rem;
+    border-radius: 0 10px 10px 0;
+    background: rgba(255,255,255,0.025);
+    margin-bottom: 0.55rem;
+}
+.nv-rc-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 0.3rem;
+}
+
+/* ══════════════════════════════════════════════════════════════
    DROPZONE — SUBIDA DE INFORMES MÉDICOS
    ══════════════════════════════════════════════════════════════ */
 
