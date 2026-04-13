@@ -827,6 +827,7 @@ function changeView(v) {
     // Spotify: refrescar estado del reproductor al entrar a la vista RAS
     if (v === 'ras' && window.NVSpotify) setTimeout(() => NVSpotify.updateUI(), 120);
     if (v === 'evolution') setTimeout(_initEvoChart, 150);
+    if (v === 'health') setTimeout(_initHealthDropzone, 80);
 }
 
 function render() {
@@ -1027,30 +1028,23 @@ const views = {
             <h3>${t('hlt_title')}</h3>
             <p class="view-sub">${t('hlt_sub')}</p>
 
-            <!-- INPUT OCULTO — el <label for> lo activa nativamente sin JS -->
-            <input type="file" id="file-upload-input" accept=".pdf,.jpg,.jpeg,.png"
-                   style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;"
-                   onchange="handleFileUpload(this)">
+            <!-- DROPZONE: <label> contiene el <input> — clic nativo garantizado -->
+            <label id="upload-dropzone" class="nv-dropzone">
+                <!-- input DENTRO del label: cualquier clic en el label abre el picker -->
+                <input type="file" id="file-upload-input"
+                       accept=".pdf,.jpg,.jpeg,.png"
+                       style="display:none;"
+                       onchange="handleFileUpload(this)">
 
-            <!-- DROPZONE como <label> — clic nativo + drag & drop -->
-            <label id="upload-dropzone" for="file-upload-input"
-                   class="nv-dropzone"
-                   ondragover="event.preventDefault();event.stopPropagation();_dropzoneHover(true);"
-                   ondragleave="_dropzoneHover(false);"
-                   ondrop="event.preventDefault();event.stopPropagation();_dropzoneHover(false);handleDroppedFile(event.dataTransfer.files[0]);">
-
-                <!-- Icono y texto — pointer-events:none para que el clic llegue al label -->
-                <div style="pointer-events:none;text-align:center;">
-                    <div id="dropzone-icon-wrap">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
-                             fill="none" stroke="var(--accent-cyan)" stroke-width="1.6"
-                             stroke-linecap="round" stroke-linejoin="round"
-                             style="display:block;margin:0 auto 0.75rem;">
-                            <polyline points="16 16 12 12 8 16"></polyline>
-                            <line x1="12" y1="12" x2="12" y2="21"></line>
-                            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
-                        </svg>
-                    </div>
+                <div id="dropzone-icon-wrap" style="text-align:center;pointer-events:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
+                         fill="none" stroke="var(--accent-cyan)" stroke-width="1.6"
+                         stroke-linecap="round" stroke-linejoin="round"
+                         style="display:block;margin:0 auto 0.75rem;">
+                        <polyline points="16 16 12 12 8 16"></polyline>
+                        <line x1="12" y1="12" x2="12" y2="21"></line>
+                        <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+                    </svg>
                     <p style="font-weight:700;font-size:0.95rem;margin-bottom:0.3rem;">${t('hlt_click')}</p>
                     <p id="upload-status" style="font-size:0.82rem;color:rgba(148,163,184,0.6);">
                         ${t('hlt_fmt')}
@@ -2860,6 +2854,42 @@ document.addEventListener('click', (e) => {
 function triggerFileUpload() {
     const input = document.getElementById('file-upload-input');
     if (input) input.click();
+}
+
+// Conecta eventos drag-and-drop al dropzone después del render —
+// se llama via setTimeout desde changeView('health')
+function _initHealthDropzone() {
+    const dz = document.getElementById('upload-dropzone');
+    if (!dz) return;
+
+    // Evitar doble-bind si el usuario navega de vuelta a health
+    if (dz._nvDzInit) return;
+    dz._nvDzInit = true;
+
+    dz.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        _dropzoneHover(true);
+    });
+    dz.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        _dropzoneHover(true);
+    });
+    dz.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        // Solo desactivar si el puntero sale del área completa (no de un hijo)
+        if (!dz.contains(e.relatedTarget)) _dropzoneHover(false);
+    });
+    dz.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        _dropzoneHover(false);
+        const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (file) handleDroppedFile(file);
+    });
+
+    console.log('[NVHealth] Dropzone iniciado — clic y drag-drop activos');
 }
 
 // Hover visual del dropzone durante el drag
