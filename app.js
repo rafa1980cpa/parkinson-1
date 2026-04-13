@@ -1028,15 +1028,18 @@ const views = {
             <h3>${t('hlt_title')}</h3>
             <p class="view-sub">${t('hlt_sub')}</p>
 
-            <!-- DROPZONE: <label> contiene el <input> — clic nativo garantizado -->
-            <label id="upload-dropzone" class="nv-dropzone">
-                <!-- input DENTRO del label: cualquier clic en el label abre el picker -->
+            <!-- DROPZONE: input transparente sobre toda el área — el clic llega directo -->
+            <div id="upload-dropzone" class="nv-dropzone" style="position:relative;">
+
+                <!-- Input invisible que cubre todo el dropzone — ES el área clicable -->
                 <input type="file" id="file-upload-input"
                        accept=".pdf,.jpg,.jpeg,.png"
-                       style="display:none;"
-                       onchange="handleFileUpload(this)">
+                       onchange="handleFileUpload(this)"
+                       style="position:absolute;inset:0;width:100%;height:100%;
+                              opacity:0;cursor:pointer;z-index:5;">
 
-                <div id="dropzone-icon-wrap" style="text-align:center;pointer-events:none;">
+                <!-- Contenido visual debajo del input (pointer-events:none) -->
+                <div id="dropzone-icon-wrap" style="text-align:center;pointer-events:none;position:relative;z-index:1;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
                          fill="none" stroke="var(--accent-cyan)" stroke-width="1.6"
                          stroke-linecap="round" stroke-linejoin="round"
@@ -1050,7 +1053,7 @@ const views = {
                         ${t('hlt_fmt')}
                     </p>
                 </div>
-            </label>
+            </div>
 
             <div id="report-ana-box" style="display:none;margin-top:1.2rem;">
                 <button class="action-btn btn-primary" style="width:100%;min-height:52px;"
@@ -2860,25 +2863,19 @@ function triggerFileUpload() {
 // se llama via setTimeout desde changeView('health')
 function _initHealthDropzone() {
     const dz = document.getElementById('upload-dropzone');
-    if (!dz) return;
-
-    // Evitar doble-bind si el usuario navega de vuelta a health
-    if (dz._nvDzInit) return;
+    if (!dz || dz._nvDzInit) return;
     dz._nvDzInit = true;
 
-    dz.addEventListener('dragenter', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        _dropzoneHover(true);
-    });
-    dz.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        _dropzoneHover(true);
+    // El input transparente cubre todo; para drag-and-drop lo bypaseamos
+    // escuchando los eventos en el contenedor padre
+    ['dragenter','dragover'].forEach(evt => {
+        dz.addEventListener(evt, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            _dropzoneHover(true);
+        });
     });
     dz.addEventListener('dragleave', (e) => {
-        e.preventDefault();
-        // Solo desactivar si el puntero sale del área completa (no de un hijo)
         if (!dz.contains(e.relatedTarget)) _dropzoneHover(false);
     });
     dz.addEventListener('drop', (e) => {
@@ -2889,7 +2886,7 @@ function _initHealthDropzone() {
         if (file) handleDroppedFile(file);
     });
 
-    console.log('[NVHealth] Dropzone iniciado — clic y drag-drop activos');
+    console.log('[NVHealth] Dropzone listo ✓ — clic y drag-drop activos');
 }
 
 // Hover visual del dropzone durante el drag
@@ -2904,6 +2901,11 @@ function _dropzoneHover(on) {
 // Spinner de "Analizando..." dentro del dropzone
 function _dropzoneSetLoading(loading) {
     const wrap = document.getElementById('dropzone-icon-wrap');
+    // Durante análisis, el input transparente ya no hace falta — ocultarlo
+    const inp = document.getElementById('file-upload-input');
+    if (loading && inp) inp.style.display = 'none';
+    if (!loading && inp) { inp.style.display = ''; inp.style.position = 'absolute'; inp.style.inset = '0'; inp.style.width = '100%'; inp.style.height = '100%'; inp.style.opacity = '0'; inp.style.cursor = 'pointer'; inp.style.zIndex = '5'; }
+
     if (!wrap) return;
     if (loading) {
         wrap.innerHTML = `
@@ -2912,9 +2914,9 @@ function _dropzoneSetLoading(loading) {
                  stroke-linejoin="round"
                  style="display:block;margin:0 auto 0.75rem;animation:nvSpin 1s linear infinite;">
                 <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-            </svg>`;
-        const status = document.getElementById('upload-status');
-        if (status) status.textContent = t('hlt_analyzing');
+            </svg>
+            <p style="font-weight:700;font-size:0.95rem;color:var(--primary-green);margin-bottom:0.3rem;">${t('hlt_analyzing')}</p>
+            <p id="upload-status" style="font-size:0.82rem;color:rgba(148,163,184,0.6);"></p>`;
     } else {
         wrap.innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
@@ -2924,7 +2926,9 @@ function _dropzoneSetLoading(loading) {
                 <polyline points="16 16 12 12 8 16"></polyline>
                 <line x1="12" y1="12" x2="12" y2="21"></line>
                 <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
-            </svg>`;
+            </svg>
+            <p style="font-weight:700;font-size:0.95rem;margin-bottom:0.3rem;">${t('hlt_click')}</p>
+            <p id="upload-status" style="font-size:0.82rem;color:rgba(148,163,184,0.6);">${t('hlt_fmt')}</p>`;
     }
 }
 
