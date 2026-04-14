@@ -559,14 +559,45 @@ label {
     .lang-toggle-btn { padding: 0 0.5rem; font-size: 0.72rem; }
 }
 
-/* ── Auth flow: pantallas más amplias ── */
-#auth-flow {
-    padding: 1.5rem 1rem;
-    min-height: 100vh;
+/* ── Auth flow ── */
+body.auth-mode .app-container {
+    padding-right: 0;                        /* sin nav → sin padding lateral */
+    padding-bottom: 0;
 }
+
+#auth-flow {
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: max(2rem, env(safe-area-inset-top, 2rem)) 1.25rem
+             max(1.5rem, env(safe-area-inset-bottom, 1.5rem));
+    box-sizing: border-box;
+}
+
 #auth-flow .neuro-card {
     width: 100%;
-    max-width: 520px;
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+@media (max-width: 480px) {
+    #auth-flow {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    #auth-flow .neuro-card {
+        border-radius: 20px;
+    }
+    /* inputs más grandes en móvil para accesibilidad */
+    #auth-flow input {
+        font-size: 1rem !important;
+        padding: 0.9rem 1rem !important;
+        min-height: 52px;
+    }
+    #auth-flow .action-btn {
+        min-height: 52px;
+        font-size: 1rem;
+    }
 }
 
 /* ── Perfil: resumen médico ── */
@@ -900,6 +931,46 @@ label {
     border: none;
     box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
     cursor: pointer;
+}
+
+/* ── Pulso del icono de zapato — sincronizado con el beat ───── */
+@keyframes ras-shoe-pulse {
+    0%   { transform: scale(1);    filter: none; }
+    25%  { transform: scale(1.45); filter: drop-shadow(0 0 10px rgba(16,185,129,0.95)); }
+    100% { transform: scale(1);    filter: none; }
+}
+.ras-foot-pulse {
+    display: inline-block;
+    animation: ras-shoe-pulse 0.14s ease-out forwards;
+}
+
+/* ── BPM en zona de alerta (> 120 BPM) ─────────────────────── */
+.ras-bpm-alert {
+    color: #f59e0b !important;
+    text-shadow: 0 0 22px rgba(245,158,11,0.5);
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+/* ── Banner de seguridad por prescripción ───────────────────── */
+#ras-safety-banner {
+    display: none;
+    margin: 0.6rem 0 0;
+    padding: 0.7rem 1rem;
+    border-radius: 12px;
+    background: rgba(245, 158, 11, 0.09);
+    border: 1px solid rgba(245, 158, 11, 0.38);
+    font-size: 0.74rem;
+    color: #f59e0b;
+    line-height: 1.55;
+    text-align: center;
+    animation: ras-banner-in 0.3s ease;
+}
+#ras-safety-banner.ras-safety-visible {
+    display: block;
+}
+@keyframes ras-banner-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 /* Flash de rescate — disparado por nv-freezing.js */

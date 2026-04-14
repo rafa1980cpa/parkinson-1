@@ -1,5 +1,5 @@
 /**
- * NeuroVida PRO — Módulo Firebase
+ * NeuroTempo PRO — Módulo Firebase
  * Auth (signIn · register · passwordReset · signOut)
  * Firestore (perfil de usuario · sub-colección evaluations)
  *
@@ -143,6 +143,24 @@
         if (!_ready || !uid) return null;
         const snap = await _db.collection('users').doc(uid).get();
         return snap.exists ? snap.data() : null;
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // FIRESTORE — Configuración de usuario (idioma, preferencias)
+    // Ruta: users/{uid}/settings  (merge para no sobreescribir otros campos)
+    // ─────────────────────────────────────────────────────────
+    async function saveSettings(uid, settings) {
+        if (!_ready || !uid) return;
+        await _db.collection('users').doc(uid).set(
+            { settings: { ...settings, updatedAt: firebase.firestore.FieldValue.serverTimestamp() } },
+            { merge: true }
+        );
+    }
+
+    async function loadSettings(uid) {
+        if (!_ready || !uid) return null;
+        const snap = await _db.collection('users').doc(uid).get();
+        return snap.exists ? (snap.data().settings || null) : null;
     }
 
     // ─────────────────────────────────────────────────────────
@@ -357,6 +375,8 @@
         // Firestore — Perfil y evaluaciones
         saveProfile,
         loadProfile,
+        saveSettings,
+        loadSettings,
         saveEvaluation,
         deleteEvaluation,
         getEvaluations,

@@ -1,5 +1,5 @@
 /**
- * NeuroVida — Módulo 1: Botones Magnéticos (Accesibilidad Anti-Temblor)
+ * NeuroTempo — Módulo 1: Botones Magnéticos (Accesibilidad Anti-Temblor)
  * Magnetic touch attraction + intelligent tremor debounce
  *
  * Activable desde Ajustes Avanzados (nv_settings.magneticButtons)

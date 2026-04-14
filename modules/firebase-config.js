@@ -1,10 +1,10 @@
 /**
- * NeuroVida PRO — Configuración de Firebase
+ * NeuroTempo PRO — Configuración de Firebase
  * ─────────────────────────────────────────────────────────────
  * INSTRUCCIONES DE CONFIGURACIÓN:
  *
  *  1. Ve a https://console.firebase.google.com
- *  2. Crea un proyecto o selecciona el existente (ej: "neurovida-pro")
+ *  2. Crea un proyecto o selecciona el existente (ej: "neurotempo-pro")
  *  3. Project Settings → General → Tus apps → Agregar app web (</>)
  *  4. Copia el objeto firebaseConfig que te muestra Google
  *  5. Pega los valores reales aquí reemplazando cada "YOUR_*"

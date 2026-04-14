@@ -5,10 +5,10 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-    <title>NeuroVida PRO | Ecosistema Parkinson</title>
+    <title>NeuroTempo PRO | Ecosistema Parkinson</title>
     <meta name="description" content="Ecosistema digital de salud para pacientes con Parkinson. Terapia RAS, medicación, SOS, informes médicos e IA clínica.">
     <meta name="keywords" content="parkinson, salud, terapia, metrónomo, medicación, SOS, neurología">
-    <meta name="author" content="NeuroVida PRO">
+    <meta name="author" content="NeuroTempo PRO">
     <meta name="robots" content="noindex, nofollow">
 
     <!-- PWA / Instalación -->
@@ -19,7 +19,7 @@
     <!-- iOS Safari -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="NeuroVida">
+    <meta name="apple-mobile-web-app-title" content="NeuroTempo">
     <link rel="apple-touch-icon" href="logoapp.png">
     <link rel="apple-touch-startup-image" href="logoapp.png">
 
@@ -29,7 +29,7 @@
 
     <!-- Open Graph (compartir en redes / WhatsApp) -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="NeuroVida PRO">
+    <meta property="og:title" content="NeuroTempo PRO">
     <meta property="og:description" content="Salud digital de alta precisión para pacientes con Parkinson.">
     <meta property="og:image" content="logoapp.png">
     <meta property="og:locale" content="es_ES">
@@ -51,7 +51,7 @@
                     </button>
                 </div>
                 <div style="flex:1;display:flex;flex-direction:column;align-items:center;line-height:1.2;text-align:center;">
-                    <div class="logo" style="font-size:1.4rem;">NEUROVIDA</div>
+                    <div class="logo" style="font-size:1.25rem;letter-spacing:0.04em;">NEUROTEMPO</div>
                     <span id="view-title"></span>
                 </div>
                 <div style="display:flex;gap:0.5rem;align-items:center;flex-shrink:0;">
@@ -114,13 +114,13 @@
                      style="width:170px;height:170px;border-radius:50%;object-fit:cover;
                             display:block;margin:0 auto 1.6rem auto;
                             box-shadow:0 4px 20px rgba(0,255,255,0.2),0 0 50px rgba(0,242,255,0.08),0 12px 35px rgba(0,0,0,0.55);">
-                <h1 class="logo" style="color:var(--accent-cyan);font-size:2.5rem;margin-bottom:0.5rem;">NEUROVIDA</h1>
+                <h1 class="logo" style="color:var(--accent-cyan);font-size:2.3rem;margin-bottom:0.5rem;letter-spacing:0.04em;">NEUROTEMPO</h1>
                 <p style="margin-bottom:1.8rem;color:rgba(148,163,184,0.7);font-size:0.9rem;" data-i18n="tagline">
-                    Salud Digital de Alta Precisión
+                    Sincronía rítmica para tu bienestar neuronal
                 </p>
                 <div style="display:flex;flex-direction:column;gap:1rem;text-align:left;">
                     <div>
-                        <label style="font-weight:700;font-size:0.85rem;color:rgba(241,245,249,0.8);" data-i18n="login_email">Correo Electrónico</label>
+                        <label style="font-weight:700;font-size:0.85rem;color:rgba(241,245,249,0.8);" data-i18n="login_email">Correo electrónico</label>
                         <input type="email" id="login-email" data-i18n-ph="login_email"
                                placeholder="ejemplo@correo.com"
                                style="width:100%;padding:1rem;border-radius:12px;border:1.5px solid rgba(255,255,255,0.1);margin-top:0.5rem;font-size:1rem;">
@@ -131,18 +131,18 @@
                                style="width:100%;padding:1rem;border-radius:12px;border:1.5px solid rgba(255,255,255,0.1);margin-top:0.5rem;font-size:1rem;">
                     </div>
                     <button class="action-btn btn-primary" style="width:100%;margin-top:0.5rem;"
-                            onclick="handleLogin()" data-i18n="login_btn">INICIAR SESIÓN</button>
+                            onclick="handleLogin()" data-i18n="login_btn">Iniciar Sesión</button>
                 </div>
                 <div style="margin-top:1.2rem;font-size:0.88rem;">
                     <a href="#" onclick="showAuthMode('recover')"
                        style="color:var(--accent-cyan);text-decoration:none;" data-i18n="forgot_pass">
-                        ¿Olvidó su contraseña?
+                        ¿Olvidaste tu contraseña?
                     </a>
                 </div>
                 <hr style="margin:1.2rem 0;border:none;border-top:1px solid rgba(255,255,255,0.08);">
-                <p style="font-size:0.88rem;color:rgba(148,163,184,0.7);" data-i18n="no_account">¿No tiene cuenta?</p>
+                <p style="font-size:0.88rem;color:rgba(148,163,184,0.7);" data-i18n="no_account">¿No tienes una cuenta?</p>
                 <button class="action-btn" style="width:100%;margin-top:0.5rem;border:1.5px solid var(--accent-cyan);color:var(--accent-cyan);"
-                        onclick="showAuthMode('register')" data-i18n="create_profile">CREAR PERFIL NUEVO</button>
+                        onclick="showAuthMode('register')" data-i18n="create_profile">Crear Perfil</button>
             </div>
 
             <!-- REGISTRO -->
@@ -207,7 +207,7 @@
             <h2 style="color:var(--accent-cyan);margin-bottom:1.2rem;font-family:var(--font-accent);" data-i18n="priv_title">Términos y Protección de Datos</h2>
             <div style="font-size:0.95rem;line-height:1.7;color:rgba(241,245,249,0.9);margin-bottom:1.5rem;text-align:left;">
                 <p style="margin-bottom:1rem;padding:0.9rem;background:rgba(0,242,255,0.06);border-radius:14px;border-left:3px solid var(--accent-cyan);">
-                    <strong>NeuroVida</strong> protege su información médica bajo los estándares <strong>HIPAA</strong> y <strong>RGPD</strong>. Sus datos biométricos son cifrados localmente y nunca compartidos sin su consentimiento explícito.
+                    <strong>NeuroTempo</strong> protege su información médica bajo los estándares <strong>HIPAA</strong> y <strong>RGPD</strong>. Sus datos biométricos son cifrados localmente y nunca compartidos sin su consentimiento explícito.
                 </p>
                 <p style="margin-bottom:1rem;">Al continuar, acepta que la aplicación procese sus tests de salud para generar informes clínicos personalizados.</p>
                 <p style="font-size:0.83rem;color:rgba(148,163,184,0.75);">Puede retirar su consentimiento y exportar o eliminar sus datos en cualquier momento desde los ajustes de seguridad.</p>
@@ -239,8 +239,11 @@
     <!-- ── Configuración y servicios Firebase ── -->
     <script src="modules/firebase-config.js"></script>
     <script src="modules/nv-firebase.js"></script>
+    <!-- i18n: debe cargarse antes de app.js para que t() esté disponible -->
+    <script src="modules/nv-i18n.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="app.js"></script>
     <!-- ── Módulos Avanzados de IA y Accesibilidad ── -->
     <script src="modules/nv-history.js"></script>

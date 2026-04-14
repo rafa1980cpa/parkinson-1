@@ -1,5 +1,5 @@
 /**
- * NeuroVida — Módulo: Historial de Sesiones de Rehabilitación
+ * NeuroTempo — Módulo: Historial de Sesiones de Rehabilitación
  * Almacena, consulta y resume cada prueba completada.
  *
  * Schema de entrada:

@@ -1,5 +1,5 @@
 /**
- * NeuroVida PRO — Fase 9: Funcionalidad Completa y Bilingüe
+ * NeuroTempo PRO — Fase 9: Funcionalidad Completa y Bilingüe
  * SPA Navigation · Real Tapping · Real Mic · RAS Metronome · EN/ES
  */
 
@@ -72,17 +72,17 @@ function nvLoadUser() {
 function detectLang() {
     const saved = localStorage.getItem('nv_lang');
     if (saved) return saved;
-    const sys = (navigator.language || 'es').toLowerCase();
-    return sys.startsWith('es') ? 'es' : 'en';
+    // Idioma por defecto: español siempre (aplicación clínica en ES)
+    return 'es';
 }
 
 const translations = {
     es: {
         // Auth
-        tagline: 'Salud Digital de Alta Precisión',
-        login_email: 'Correo Electrónico', login_pass: 'Contraseña',
-        login_btn: 'INICIAR SESIÓN', forgot_pass: '¿Olvidó su contraseña?',
-        no_account: '¿No tiene cuenta?', create_profile: 'CREAR PERFIL NUEVO',
+        tagline: 'Sincronía rítmica para tu bienestar neuronal',
+        login_email: 'Correo electrónico', login_pass: 'Contraseña',
+        login_btn: 'Iniciar Sesión', forgot_pass: '¿Olvidaste tu contraseña?',
+        no_account: '¿No tienes una cuenta?', create_profile: 'Crear Perfil',
         reg_title: 'Crear Nuevo Perfil', reg_name: 'Nombre Completo',
         reg_email: 'Correo Electrónico', reg_pass: 'Crear Contraseña',
         reg_btn: 'REGISTRARSE', back: 'VOLVER',
@@ -126,11 +126,11 @@ const translations = {
         yt_hub_sub: 'Playlists de ritmo para terapia de marcha · Sin registro',
         yt_search_label: 'Busca una playlist en YouTube:',
         yt_embed_label: 'O reproduce directamente aquí:',
-        yt_url_ph: 'Pega la URL de YouTube, Spotify, Vimeo, SoundCloud...',
+        yt_url_ph: 'Pega la URL de YouTube o Spotify...',
         yt_name_ph: 'Nombre para recordarla (opcional)',
         yt_load_btn: 'Reproducir',
         yt_stop_btn: '⏹ Detener',
-        yt_hint: 'Compatible con YouTube · Spotify · Vimeo · SoundCloud · Dailymotion · Twitch',
+        yt_hint: 'Compatible con YouTube · Spotify · Dailymotion · Twitch',
         yt_tip: 'Ajusta el volumen manualmente cuando uses el metrónomo RAS.',
         yt_saved: 'Guardadas',
         yt_no_saved: 'Aún no hay playlists guardadas',
@@ -216,7 +216,7 @@ const translations = {
         ev_share: 'Compartir con Doctor',
         ev_share_wa: 'WhatsApp',
         ev_share_email: 'Email',
-        ev_share_title: 'Informe de Sesión — NeuroVida PRO',
+        ev_share_title: 'Informe de Sesión — NeuroTempo PRO',
         ev_skeleton_msg: 'Obteniendo datos de la nube...',
     },
     en: {
@@ -268,10 +268,10 @@ const translations = {
         yt_hub_sub: 'Rhythm playlists for gait therapy · No login required',
         yt_search_label: 'Search a playlist on YouTube:',
         yt_embed_label: 'Or play directly here:',
-        yt_url_ph: 'Paste a YouTube, Spotify, Vimeo, SoundCloud URL...',
+        yt_url_ph: 'Paste a YouTube or Spotify URL...',
         yt_load_btn: 'Play',
         yt_stop_btn: '⏹ Stop',
-        yt_hint: 'Supports YouTube · Spotify · Vimeo · SoundCloud · Dailymotion · Twitch',
+        yt_hint: 'Supports YouTube · Spotify · Dailymotion · Twitch',
         yt_tip: 'Adjust volume manually when using the RAS metronome.',
         yt_saved: 'Saved',
         yt_no_saved: 'No saved playlists yet',
@@ -359,12 +359,24 @@ const translations = {
         ev_share: 'Share with Doctor',
         ev_share_wa: 'WhatsApp',
         ev_share_email: 'Email',
-        ev_share_title: 'Session Report — NeuroVida PRO',
+        ev_share_title: 'Session Report — NeuroTempo PRO',
         ev_skeleton_msg: 'Fetching cloud data...',
     }
 };
 
-const t = (key) => (translations[state.lang] || translations.es)[key] || key;
+// t() delega en NVI18n cuando está disponible.
+// Si NVI18n devuelve la propia clave (JSON no cargado), cae al diccionario inline.
+const t = (key, vars) => {
+    if (window.NVI18n) {
+        const result = NVI18n.t(key, vars);
+        if (result !== key) return result;   // traducción encontrada en JSON
+    }
+    // Fallback inline — siempre disponible, no depende de XHR
+    const dict = (translations[state.lang] || translations.es);
+    let str = dict[key] || key;
+    if (vars) for (const [k, v] of Object.entries(vars)) str = str.replace(`{${k}}`, v);
+    return str;
+};
 
 // ============================================================
 // SISTEMA DE NOTIFICACIONES INTERNO (reemplaza alert())
@@ -484,6 +496,7 @@ function showAuthMode(mode) {
     });
     const authFlow = document.getElementById('auth-flow');
     if (authFlow) authFlow.style.display = 'flex';
+    document.body.classList.add('auth-mode');
     applyStaticTranslations();
 }
 
@@ -639,16 +652,33 @@ async function handleRecover() {
     }
 }
 
-function initApp() {
+async function initApp() {
     if (!state.user) return;
     if (!state.user.age || !state.user.country) {
         checkProfileComplete();
         return;
     }
+
+    // ── Cargar i18n: recuperar idioma desde Firestore si el usuario lo guardó ──
+    if (window.NVI18n) {
+        try {
+            const uid = window.NVFirebase ? NVFirebase.getCurrentUid() : null;
+            if (uid && window.NVFirebase && NVFirebase.isReady()) {
+                const settings = await NVFirebase.loadSettings(uid);
+                if (settings && settings.lang && settings.lang !== state.lang) {
+                    state.lang = settings.lang;
+                    localStorage.setItem('nv_lang', settings.lang);
+                }
+            }
+        } catch (_) { /* fallo silencioso — usar idioma local */ }
+        await NVI18n.init(state.lang);
+    }
+
     ['auth-flow'].forEach(id => document.getElementById(id).style.display = 'none');
     ['main-header', 'neuro-content'].forEach(id => document.getElementById(id).style.display = 'block');
     document.getElementById('floating-sos-btn').style.display = 'flex';
     document.querySelector('nav.bottom-nav').style.display = 'flex';
+    document.body.classList.remove('auth-mode');
 
     updateHeader();
     injectLangToggle();
@@ -729,9 +759,16 @@ function getContextChip(view) {
 // ============================================================
 // SISTEMA DE IDIOMAS
 // ============================================================
-function setLang(lang) {
+async function setLang(lang) {
     state.lang = lang;
-    localStorage.setItem('nv_lang', lang);
+    // Sincronizar NVI18n y persistir en localStorage + Firestore
+    if (window.NVI18n) {
+        const uid = window.NVFirebase ? NVFirebase.getCurrentUid() : null;
+        await NVI18n.setLang(lang, uid);
+        if (uid) showToast(t('lang_saved'), 'success');
+    } else {
+        localStorage.setItem('nv_lang', lang);
+    }
     const btn = document.getElementById('lang-toggle');
     if (btn) btn.textContent = lang === 'es' ? 'EN' : 'ES';
     updateHeader();
@@ -757,8 +794,16 @@ function applyStaticTranslations() {
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         const val = t(key);
+        // Si t() devuelve la clave sin traducir, conservar el texto HTML original
+        if (val === key) return;
         if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.placeholder = val;
         else el.textContent = val;
+    });
+    // Placeholders con clave propia (data-i18n-ph)
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+        const key = el.getAttribute('data-i18n-ph');
+        const val = t(key);
+        if (val !== key) el.placeholder = val;
     });
 }
 
@@ -882,9 +927,13 @@ function _renderMedicalReportsList() {
         </div>`;
 
     const cardsHtml = reports.slice(0, 20).map(r => {
-        const diag = r.diagnostico_principal || r.diagnosis || '—';
-        const med = r.medicacion_activa || r.medicacion || '';
-        const rec = r.recomendaciones || r.analysis || '—';
+        // Traducción dinámica de contenido clínico (NLP siempre en ES → app lang)
+        const _rawDiag = r.diagnostico_principal || r.diagnosis || '—';
+        const _rawMed  = r.medicacion_activa || r.medicacion || '';
+        const _rawRec  = r.recomendaciones || r.analysis || '—';
+        const diag = window.NVI18n ? NVI18n.translateDynamicContent(_rawDiag, state.lang) : _rawDiag;
+        const med  = window.NVI18n ? NVI18n.getTranslatedMedInstruction(_rawMed, state.lang)  : _rawMed;
+        const rec  = window.NVI18n ? NVI18n.getTranslatedClinicalText(_rawRec, state.lang)    : _rawRec;
         const src = r.source || r.fileName || (isEs ? 'Informe' : 'Report');
         const date = r.date || '';
         const mx = r.metricas || {};
@@ -1011,9 +1060,20 @@ function _renderMedicalReportsList() {
                 <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">${metricPills}</div>
             </div>` : ''}
 
-            <!-- Pie de tarjeta: botón eliminar -->
-            <div style="display:flex;justify-content:flex-end;margin-top:0.75rem;padding-top:0.6rem;
+            <!-- Pie de tarjeta: descargar + eliminar -->
+            <div style="display:flex;justify-content:space-between;align-items:center;
+                        margin-top:0.75rem;padding-top:0.6rem;
                         border-top:1px solid rgba(148,163,184,0.08);">
+                <button onclick="downloadSingleReport('${r.id}')"
+                        style="display:inline-flex;align-items:center;gap:0.3rem;padding:5px 14px;
+                               border-radius:50px;border:1px solid rgba(0,242,255,0.25);
+                               background:rgba(0,242,255,0.06);cursor:pointer;
+                               font-size:0.72rem;font-weight:700;color:rgba(0,242,255,0.7);
+                               transition:all 0.18s;"
+                        onmouseover="this.style.background='rgba(0,242,255,0.14)';this.style.color='rgba(0,242,255,1)'"
+                        onmouseout="this.style.background='rgba(0,242,255,0.06)';this.style.color='rgba(0,242,255,0.7)'">
+                    ⬇ ${isEs ? 'Descargar PDF' : 'Download PDF'}
+                </button>
                 <button onclick="deleteReport('${r.id}')"
                         style="display:inline-flex;align-items:center;gap:0.3rem;padding:4px 12px;
                                border-radius:50px;border:1px solid rgba(239,68,68,0.2);
@@ -1250,9 +1310,12 @@ const views = {
                 ${t('hlt_no_reports')}
                </p>`
             : state.medicalReports.slice(0, 8).map(r => {
-                const diag = r.diagnostico_principal || r.diagnosis || '—';
-                const med = r.medicacion_activa || r.medicacion || '';
-                const rec = r.recomendaciones || r.analysis || '—';
+                const _rDiag = r.diagnostico_principal || r.diagnosis || '—';
+                const _rMed  = r.medicacion_activa || r.medicacion || '';
+                const _rRec  = r.recomendaciones || r.analysis || '—';
+                const diag = window.NVI18n ? NVI18n.translateDynamicContent(_rDiag, state.lang) : _rDiag;
+                const med  = window.NVI18n ? NVI18n.getTranslatedMedInstruction(_rMed, state.lang)  : _rMed;
+                const rec  = window.NVI18n ? NVI18n.getTranslatedClinicalText(_rRec, state.lang)    : _rRec;
                 const src = r.source || r.fileName || (isEs ? 'Informe' : 'Report');
                 const mx = r.metricas || {};
                 const feviNum = mx.fevi ? parseInt(mx.fevi) : null;
@@ -1347,13 +1410,6 @@ const views = {
             <div id="reports-list" style="max-height:72vh;overflow-y:auto;padding-right:2px;">
                 ${initialReports}
             </div>
-        </div>
-
-        <!-- DESCARGAR PDF -->
-        <div class="neuro-card">
-            <button class="action-btn btn-secondary" style="width:100%;" onclick="exportPDF()">
-                <i data-lucide="file-text"></i> ${t('hlt_download')}
-            </button>
         </div>
 
         <!-- MEDICACIÓN Y CALENDARIO -->
@@ -1485,7 +1541,7 @@ const views = {
                 <!-- BPM número + etiqueta -->
                 <div style="font-size:4.2rem;font-weight:900;font-family:var(--font-accent);
                             line-height:1;color:var(--text-dark);">
-                    <span id="ras-bpm-display">${state.metronomeBPM}</span>
+                    <span id="ras-bpm-display" class="${state.metronomeBPM > 120 ? 'ras-bpm-alert' : ''}">${state.metronomeBPM}</span>
                 </div>
                 <div style="font-size:0.78rem;color:rgba(148,163,184,0.55);margin:0.3rem 0 1.5rem;
                             letter-spacing:0.1em;text-transform:uppercase;">
@@ -1499,7 +1555,16 @@ const views = {
                        class="ras-slider">
                 <div style="display:flex;justify-content:space-between;width:86%;margin:0.4rem auto 0;
                             font-size:0.7rem;color:rgba(148,163,184,0.4);">
-                    <span>60</span><span>120</span><span>180</span>
+                    <span>60</span>
+                    <span style="color:rgba(245,158,11,0.55);">120 ⚠</span>
+                    <span>180</span>
+                </div>
+
+                <!-- Aviso de seguridad — visible automáticamente cuando BPM > 120 -->
+                <div id="ras-safety-banner" class="${state.metronomeBPM > 120 ? 'ras-safety-visible' : ''}">
+                    ⚠ ${isEs
+                        ? 'Ritmo elevado · Manténgase en niveles de baja intensidad según su prescripción.'
+                        : 'Elevated rhythm · Stay at low-intensity levels per your prescription.'}
                 </div>
             </div>
 
@@ -2723,6 +2788,25 @@ function startResp() {
 // METRÓNOMO RAS — PERCUSIÓN PROFUNDA + ONDAS EXPANSIVAS
 // ============================================================
 let _metCtx = null, _metGain = null, _metTimeout = null, _metBeat = 0;
+let _wakeLock = null;
+
+// ── Wake Lock — mantiene la pantalla activa durante la terapia ──
+async function _requestWakeLock() {
+    if (!('wakeLock' in navigator)) return;
+    try {
+        _wakeLock = await navigator.wakeLock.request('screen');
+        _wakeLock.addEventListener('release', () => { _wakeLock = null; });
+    } catch (e) { /* silencioso: sin soporte o permiso denegado */ }
+}
+function _releaseWakeLock() {
+    if (_wakeLock) { _wakeLock.release().catch(() => {}); _wakeLock = null; }
+}
+// Reactivar Wake Lock si el SO lo libera al volver a primer plano
+document.addEventListener('visibilitychange', () => {
+    if (state.metronomeActive && document.visibilityState === 'visible') {
+        _requestWakeLock();
+    }
+});
 
 function toggleMetronome() {
     state.metronomeActive ? stopMetronome() : startMetronome();
@@ -2735,9 +2819,11 @@ function startMetronome() {
 
     // Master gain — controlable desde modo rescate
     _metGain = _metCtx.createGain();
-    _metGain.gain.value = 0.78;
+    _metGain.gain.value = 0.82;
     _metGain.connect(_metCtx.destination);
 
+    // Solicitar Wake Lock para mantener audio en suspensión
+    _requestWakeLock();
 
     const btn = document.getElementById('ras-btn');
     if (btn) btn.innerHTML = `<i data-lucide="square"></i> ${t('ras_stop')}`;
@@ -2754,50 +2840,67 @@ function startMetronome() {
         _metBeat++;
 
         const t0 = _metCtx.currentTime;
-        const vol = _metGain ? _metGain.gain.value : 0.78;
+        const vol = _metGain ? _metGain.gain.value : 0.82;
+        // Beat acentuado cada 4 pasos (beat 1 del compás)
+        const isAccent = (_metBeat % 4 === 1);
 
-        // ── KICK DRUM SINTÉTICO ─────────────────────────────
-        // Sub-bass: sine sweep 140 Hz → 38 Hz en 55 ms
-        const kick = _metCtx.createOscillator();
-        const kGain = _metCtx.createGain();
-        kick.type = 'sine';
-        kick.frequency.setValueAtTime(140, t0);
-        kick.frequency.exponentialRampToValueAtTime(38, t0 + 0.055);
-        kGain.gain.setValueAtTime(vol, t0);
-        kGain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.27);
-        kick.connect(kGain); kGain.connect(_metGain);
-        kick.start(t0); kick.stop(t0 + 0.3);
+        // ── WOODBLOCK CLICK (sonido corto y seco de alta frecuencia) ──
+        // Buffer de ruido blanco de 28 ms filtrado en banda estrecha
+        const clickFrames = Math.floor(_metCtx.sampleRate * 0.028);
+        const clickBuf = _metCtx.createBuffer(1, clickFrames, _metCtx.sampleRate);
+        const clickData = clickBuf.getChannelData(0);
+        for (let i = 0; i < clickFrames; i++) clickData[i] = Math.random() * 2 - 1;
 
-        // Transiente de ataque: punch inicial
-        const atk = _metCtx.createOscillator();
-        const aGain = _metCtx.createGain();
-        atk.type = 'triangle';
-        atk.frequency.value = 1100;
-        aGain.gain.setValueAtTime(vol * 0.22, t0);
-        aGain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.016);
-        atk.connect(aGain); aGain.connect(_metGain);
-        atk.start(t0); atk.stop(t0 + 0.02);
+        const src = _metCtx.createBufferSource();
+        src.buffer = clickBuf;
 
-        // ── VISUAL: bola + pie alternante ───────────────────
+        // Filtro bandpass — woodblock: ~900 Hz normal, ~1150 Hz accent
+        const bpf = _metCtx.createBiquadFilter();
+        bpf.type = 'bandpass';
+        bpf.frequency.value = isAccent ? 1150 : 900;
+        bpf.Q.value = 9;
+
+        // Envolvente: ataque instantáneo, decay en 22 ms → silencio
+        const clickEnv = _metCtx.createGain();
+        const peakVol = isAccent ? vol * 1.0 : vol * 0.78;
+        clickEnv.gain.setValueAtTime(peakVol, t0);
+        clickEnv.gain.exponentialRampToValueAtTime(0.001, t0 + 0.022);
+
+        src.connect(bpf); bpf.connect(clickEnv); clickEnv.connect(_metGain);
+        src.start(t0); src.stop(t0 + 0.03);
+
+        // ── VISUAL: bola ─────────────────────────────────────
         const ball = document.getElementById('ras-ball');
+        const accentGlow = isAccent
+            ? '0 0 80px rgba(16,185,129,0.9),inset 0 -4px 12px rgba(0,0,0,0.2)'
+            : '0 0 65px rgba(16,185,129,0.7),inset 0 -4px 12px rgba(0,0,0,0.2)';
         if (ball) {
-            ball.style.transform = 'scale(1.28)';
-            ball.style.boxShadow = '0 0 65px rgba(16,185,129,0.75),inset 0 -4px 12px rgba(0,0,0,0.2)';
+            ball.style.transform = isAccent ? 'scale(1.32)' : 'scale(1.22)';
+            ball.style.boxShadow = accentGlow;
             setTimeout(() => {
                 if (ball) {
                     ball.style.transform = 'scale(1)';
                     ball.style.boxShadow = '0 0 40px rgba(16,185,129,0.45),inset 0 -4px 12px rgba(0,0,0,0.2)';
                 }
-            }, 88);
+            }, 85);
         }
+
+        // ── VISUAL: pulso del zapato — exactamente sincronizado con el clic ──
         const foot = document.getElementById('ras-foot');
-        if (foot) foot.textContent = _metBeat % 2 === 0 ? '🦶' : '👟';
+        if (foot) {
+            foot.textContent = _metBeat % 2 === 0 ? '🦶' : '👟';
+            foot.classList.remove('ras-foot-pulse');
+            // Forzar reflow para reiniciar la animación en cada beat
+            void foot.offsetWidth;
+            foot.classList.add('ras-foot-pulse');
+            setTimeout(() => foot.classList.remove('ras-foot-pulse'), 140);
+        }
 
         // ── ONDAS EXPANSIVAS ─────────────────────────────────
         _spawnRipple();
 
         // ── HAPTIC ──────────────────────────────────────────
-        if (navigator.vibrate) navigator.vibrate(48);
+        if (navigator.vibrate) navigator.vibrate(isAccent ? 55 : 35);
 
         _metTimeout = setTimeout(tick, (60 / state.metronomeBPM) * 1000);
     };
@@ -2807,28 +2910,97 @@ function startMetronome() {
 function stopMetronome() {
     state.metronomeActive = false;
     if (_metTimeout) { clearTimeout(_metTimeout); _metTimeout = null; }
-    if (_metCtx) { _metCtx.close().catch(() => { }); _metCtx = null; }
+    if (_metCtx) { _metCtx.close().catch(() => {}); _metCtx = null; }
     _metGain = null;
     _metBeat = 0;
+    _releaseWakeLock();
+
     const btn = document.getElementById('ras-btn');
     if (btn) btn.innerHTML = `<i data-lucide="play"></i> ${t('ras_start')}`;
     lucide.createIcons();
+
+    // Resetear zapato a estado neutro
+    const foot = document.getElementById('ras-foot');
+    if (foot) { foot.textContent = '👟'; foot.classList.remove('ras-foot-pulse'); }
+    const ball = document.getElementById('ras-ball');
+    if (ball) { ball.style.transform = 'scale(1)'; ball.style.boxShadow = '0 0 40px rgba(16,185,129,0.45),inset 0 -4px 12px rgba(0,0,0,0.2)'; }
+
     // Eliminar ondas residuales
     document.querySelectorAll('.ras-ripple-ring').forEach(r => r.remove());
 }
 
+// ── Aviso de voz / tono de seguridad cuando BPM > 120 ────────
+let _safetyWarnCooldown = false;
+function _rasPlaySafetyWarning() {
+    if (_safetyWarnCooldown) return;
+    _safetyWarnCooldown = true;
+    setTimeout(() => { _safetyWarnCooldown = false; }, 8000); // cooldown 8 s
+
+    const isEs = state.lang === 'es';
+    const msg = isEs
+        ? 'Ritmo elevado. Manténgase en niveles de baja intensidad según su prescripción.'
+        : 'Elevated rhythm. Stay at low-intensity levels per your prescription.';
+
+    // Intentar síntesis de voz (Web Speech API)
+    if (window.speechSynthesis) {
+        const utt = new SpeechSynthesisUtterance(msg);
+        utt.lang = isEs ? 'es-ES' : 'en-US';
+        utt.rate = 0.88;
+        utt.volume = 0.9;
+        window.speechSynthesis.cancel(); // cancelar cualquier lectura anterior
+        window.speechSynthesis.speak(utt);
+        return;
+    }
+
+    // Fallback: tono de aviso (beep distinto del woodblock — frecuencia baja, suave)
+    if (!_metCtx) return;
+    const wCtx = new (window.AudioContext || /** @type {any} */(window).webkitAudioContext)();
+    const osc = wCtx.createOscillator();
+    const env = wCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 440; // La — señal de advertencia
+    env.gain.setValueAtTime(0, 0);
+    env.gain.linearRampToValueAtTime(0.35, 0.05);
+    env.gain.setValueAtTime(0.35, 0.3);
+    env.gain.linearRampToValueAtTime(0, 0.5);
+    osc.connect(env); env.connect(wCtx.destination);
+    osc.start(0); osc.stop(0.55);
+    setTimeout(() => wCtx.close().catch(() => {}), 700);
+}
+
+// Muestra / oculta el banner de seguridad y actualiza el color del display
+function _rasApplySafetyState(bpm) {
+    const banner = document.getElementById('ras-safety-banner');
+    const disp   = document.getElementById('ras-bpm-display');
+    const isOver = bpm > 120;
+    if (banner) banner.classList.toggle('ras-safety-visible', isOver);
+    if (disp)   disp.classList.toggle('ras-bpm-alert', isOver);
+}
+
 function updateMetronomeBPM(val) {
-    state.metronomeBPM = parseInt(val);
+    const bpm  = parseInt(val);
+    const prev = state.metronomeBPM;
+    state.metronomeBPM = bpm;
+
     const disp = document.getElementById('ras-bpm-display');
     if (disp) disp.textContent = val;
+
+    // Lógica de seguridad: umbral 120 BPM
+    _rasApplySafetyState(bpm);
+    if (bpm > 120 && prev <= 120) {
+        // Cruzó el umbral hacia arriba → aviso
+        _rasPlaySafetyWarning();
+    }
+
     // Actualizar highlight de presets
-    [80, 110, 130].forEach(bpm => {
-        const btn = document.getElementById(`ras-preset-${bpm}`);
+    [80, 110, 130].forEach(b => {
+        const btn = document.getElementById(`ras-preset-${b}`);
         if (!btn) return;
-        const active = bpm === state.metronomeBPM;
+        const active = b === bpm;
         btn.style.borderColor = active ? 'var(--primary-green)' : 'rgba(255,255,255,0.09)';
         btn.style.color = active ? 'var(--primary-green)' : 'rgba(241,245,249,0.6)';
     });
+
     if (state.metronomeActive) { stopMetronome(); startMetronome(); }
 }
 
@@ -3013,8 +3185,8 @@ function ytLoad(rawOverride) {
     const embedUrl = _ytBuildEmbed(raw);
     if (!embedUrl) {
         _showToast(state.lang === 'es'
-            ? 'URL no compatible — prueba con YouTube, Vimeo, Spotify, SoundCloud o Dailymotion'
-            : 'URL not supported — try YouTube, Vimeo, Spotify, SoundCloud or Dailymotion', 'warn');
+            ? 'URL no compatible — prueba con YouTube, Spotify, Dailymotion o Twitch'
+            : 'URL not supported — try YouTube, Spotify, Dailymotion or Twitch', 'warn');
         return;
     }
 
@@ -3200,132 +3372,309 @@ function showMedicalTip(msg, callback) {
 // ============================================================
 // EXPORTAR PDF CLÍNICO
 // ============================================================
+
+// Helper: wrap text to fit width and return array of lines
+function _pdfWrapText(doc, text, maxWidth) {
+    return doc.splitTextToSize(String(text || ''), maxWidth);
+}
+
+// Helper: draw a filled rect as a section divider/background
+function _pdfRect(doc, x, y, w, h, r, g, b) {
+    doc.setFillColor(r, g, b);
+    doc.rect(x, y, w, h, 'F');
+}
+
 function exportPDF() {
-    const name = state.user ? state.user.name : 'Paciente';
-    const today = new Date().toLocaleDateString(state.lang === 'es' ? 'es-ES' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    if (!window.jspdf) {
+        showToast(state.lang === 'es' ? 'Librería PDF no disponible' : 'PDF library not available', 'error');
+        return;
+    }
+    const { jsPDF } = window.jspdf;
+    const isEs = state.lang === 'es';
+    const name = state.user ? state.user.name : (isEs ? 'Paciente' : 'Patient');
+    const today = new Date().toLocaleDateString(isEs ? 'es-ES' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const filename = `NeuroTempo_${name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const PW = 210, PH = 297, ML = 14, MR = 14, CW = PW - ML - MR;
+    let y = 0;
+
+    const setFont = (size, style, r, g, b) => {
+        doc.setFontSize(size);
+        doc.setFont('helvetica', style || 'normal');
+        doc.setTextColor(r ?? 30, g ?? 41, b ?? 59);
+    };
+
+    const checkPage = (needed) => {
+        if (y + needed > PH - 14) { doc.addPage(); y = 14; }
+    };
+
+    // ── HEADER ──────────────────────────────────────────────
+    _pdfRect(doc, 0, 0, PW, 28, 16, 185, 129);
+    setFont(20, 'bold', 255, 255, 255);
+    doc.text('NEUROTEMPO PRO', ML, 12);
+    setFont(9, 'normal', 220, 252, 231);
+    doc.text(isEs ? 'Reporte Clinico Integrado' : 'Integrated Clinical Report', ML, 19);
+    doc.text(today, ML, 24);
+    // HIPAA badge
+    setFont(8, 'bold', 255, 255, 255);
+    doc.text('HIPAA COMPLIANT', PW - MR - 36, 16);
+    y = 34;
+
+    // ── PACIENTE ────────────────────────────────────────────
+    checkPage(32);
+    _pdfRect(doc, ML, y, CW, 28, 240, 249, 255);
+    setFont(8, 'bold', 100, 116, 139);
+    doc.text((isEs ? 'INFORMACION DEL PACIENTE' : 'PATIENT INFORMATION'), ML + 3, y + 5);
+    setFont(10, 'bold', 30, 41, 59);
+    doc.text((isEs ? 'Nombre: ' : 'Name: ') + name, ML + 3, y + 12);
+    setFont(10, 'normal', 30, 41, 59);
+    const statusColor = state.patientStatus === 'ON' ? [16, 185, 129] : [239, 68, 68];
+    doc.text((isEs ? 'Estado: ' : 'Status: '), ML + 3, y + 18);
+    doc.setTextColor(...statusColor);
+    doc.text(`${t('phase')} ${state.patientStatus}`, ML + 22, y + 18);
+    setFont(10, 'normal', 100, 116, 139);
+    doc.text('GPS: ' + state.gpsMetadata.lat + ', ' + state.gpsMetadata.lon, ML + 3, y + 24);
+    y += 32;
+
+    // ── TAPPING TEST ────────────────────────────────────────
+    checkPage(48);
     const tapCount = state.tappingData.timestamps.length;
     const avgMs = state.tappingData.intervals.length > 0
         ? Math.round(state.tappingData.intervals.reduce((a, b) => a + b, 0) / state.tappingData.intervals.length) : 0;
-    const tapValuation = tapCount > 20 ? (state.lang === 'es' ? 'ÓPTIMO' : 'OPTIMAL') : tapCount > 10 ? 'NORMAL' : tapCount > 0 ? (state.lang === 'es' ? 'BAJO' : 'LOW') : 'N/A';
-    const tapColor = tapCount > 20 ? '#10b981' : tapCount > 10 ? '#3b82f6' : '#f59e0b';
-    const bars = state.tappingData.intervals.length > 0
-        ? state.tappingData.intervals.slice(0, 12).map(v => Math.min(Math.round((v / 800) * 100), 100))
-        : [40, 65, 80, 55, 70, 90, 60, 75, 85, 50, 68, 72];
+    const tapValuation = tapCount > 20 ? (isEs ? 'OPTIMO' : 'OPTIMAL') : tapCount > 10 ? 'NORMAL' : tapCount > 0 ? (isEs ? 'BAJO' : 'LOW') : 'N/A';
 
-    const html = `
-    <div style="font-family:Arial,sans-serif;color:#1e293b;padding:40px;max-width:760px;margin:0 auto;font-size:13px;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #10b981;padding-bottom:18px;margin-bottom:28px;">
-        <div>
-          <div style="font-size:26px;font-weight:900;color:#10b981;letter-spacing:-1px;">NEUROVIDA PRO</div>
-          <div style="color:#64748b;margin-top:4px;">${state.lang === 'es' ? 'Reporte Clínico Integrado' : 'Integrated Clinical Report'} · ${today}</div>
-        </div>
-        <div style="background:#f0fdf4;border:2px solid #10b981;border-radius:10px;padding:8px 16px;font-size:11px;font-weight:700;color:#10b981;">✔ HIPAA COMPLIANT</div>
-      </div>
-      <div style="background:#f8fafc;border-left:4px solid #3b82f6;border-radius:8px;padding:16px;margin-bottom:22px;">
-        <div style="font-weight:700;font-size:11px;color:#64748b;margin-bottom:10px;text-transform:uppercase;">${state.lang === 'es' ? 'Información del Paciente' : 'Patient Information'}</div>
-        <table style="width:100%;border-collapse:collapse;">
-          <tr><td style="padding:4px 0;width:40%;color:#64748b;">${state.lang === 'es' ? 'Nombre' : 'Name'}:</td><td style="font-weight:700;">${name}</td></tr>
-          <tr><td style="color:#64748b;">${state.lang === 'es' ? 'Estado Clínico' : 'Clinical Status'}:</td><td style="font-weight:700;color:${state.patientStatus === 'ON' ? '#10b981' : '#ef4444'};">${t('phase')} ${state.patientStatus}</td></tr>
-          <tr><td style="color:#64748b;">${state.lang === 'es' ? 'Fecha' : 'Date'}:</td><td>${today}</td></tr>
-          <tr><td style="color:#64748b;">GPS:</td><td>${state.gpsMetadata.lat}, ${state.gpsMetadata.lon}</td></tr>
-        </table>
-      </div>
-      <div style="border:1px solid #e2e8f0;border-radius:10px;padding:18px;margin-bottom:22px;">
-        <div style="font-weight:700;font-size:11px;color:#64748b;margin-bottom:14px;text-transform:uppercase;">📊 ${state.lang === 'es' ? 'Test de Tapping' : 'Tapping Test'}</div>
-        <div style="display:flex;gap:12px;margin-bottom:14px;">
-          <div style="flex:1;background:#f0fdf4;border-radius:8px;padding:14px;text-align:center;"><div style="font-size:28px;font-weight:900;color:#10b981;">${tapCount}</div><div style="font-size:10px;color:#64748b;">${t('tap_taps')}</div></div>
-          <div style="flex:1;background:#eff6ff;border-radius:8px;padding:14px;text-align:center;"><div style="font-size:28px;font-weight:900;color:#3b82f6;">${avgMs > 0 ? avgMs + 'ms' : 'N/A'}</div><div style="font-size:10px;color:#64748b;">${state.lang === 'es' ? 'Intervalo Medio' : 'Avg Interval'}</div></div>
-          <div style="flex:1;border:2px solid ${tapColor};border-radius:8px;padding:14px;text-align:center;"><div style="font-size:18px;font-weight:900;color:${tapColor};">${tapValuation}</div><div style="font-size:10px;color:#64748b;">${state.lang === 'es' ? 'Valoración' : 'Rating'}</div></div>
-        </div>
-        <div style="background:#f8fafc;border-radius:6px;padding:10px;">
-          <div style="font-size:10px;color:#94a3b8;margin-bottom:6px;">${state.lang === 'es' ? 'Distribución de intervalos:' : 'Interval distribution:'}</div>
-          <div style="display:flex;align-items:flex-end;gap:3px;height:50px;">${bars.map(h => `<div style="flex:1;background:#10b981;height:${h}%;border-radius:2px 2px 0 0;opacity:0.75;"></div>`).join('')}</div>
-        </div>
-      </div>
-      ${(() => {
-            const lastReport = state.medicalReports[0];
-            if (!lastReport) return '';
-            const isEs = state.lang === 'es';
-            return `
-        <div style="border:1px solid #e2e8f0;border-radius:10px;padding:18px;margin-bottom:22px;">
-          <div style="font-weight:700;font-size:11px;color:#64748b;margin-bottom:14px;text-transform:uppercase;">🧠 ${isEs ? 'Último Informe Médico — Análisis IA' : 'Last Medical Report — AI Analysis'}</div>
-          <div style="border-left:3px solid #3b82f6;padding:10px 14px;background:#f8fafc;border-radius:0 6px 6px 0;">
-            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-              <strong style="font-size:12px;">${lastReport.source || lastReport.fileName || ''}</strong>
-              <span style="color:#94a3b8;font-size:11px;">${lastReport.date || ''}</span>
-            </div>
-            <div style="margin-bottom:5px;">
-              <span style="font-size:10px;color:#94a3b8;text-transform:uppercase;">${isEs ? 'Diagnóstico' : 'Diagnosis'}: </span>
-              <span style="color:#3b82f6;font-weight:700;font-size:12px;">${lastReport.diagnostico_principal || lastReport.diagnosis || ''}</span>
-            </div>
-            ${(lastReport.medicacion_activa || lastReport.medicacion) ? `
-            <div style="margin-bottom:5px;">
-              <span style="font-size:10px;color:#94a3b8;text-transform:uppercase;">💊 ${isEs ? 'Medicación' : 'Medication'}: </span>
-              <span style="color:#16a34a;font-size:11px;">${lastReport.medicacion_activa || lastReport.medicacion}</span>
-            </div>` : ''}
-            <div>
-              <span style="font-size:10px;color:#94a3b8;text-transform:uppercase;">${isEs ? 'Recomendaciones' : 'Recommendations'}: </span>
-              <span style="color:#64748b;font-size:11px;">${lastReport.recomendaciones || lastReport.analysis || ''}</span>
-            </div>
-          </div>
-        </div>`;
-        })()}
-      ${(() => {
-            const sessions = window.NVHistory ? NVHistory.getAll().slice(0, 5) : [];
-            if (!sessions.length) return '';
-            const isEs = state.lang === 'es';
-            const typeLabel = { tapping: isEs ? 'Temblor' : 'Tremor', drawing: isEs ? 'Dibujo' : 'Drawing', vocal: isEs ? 'Vocal' : 'Vocal', breathing: isEs ? 'Respiración' : 'Breathing' };
-            return `
-        <div style="border:1px solid #e2e8f0;border-radius:10px;padding:18px;margin-bottom:22px;">
-          <div style="font-weight:700;font-size:11px;color:#64748b;margin-bottom:14px;text-transform:uppercase;">📈 ${isEs ? 'Últimas Sesiones de Rehabilitación' : 'Latest Rehabilitation Sessions'}</div>
-          ${sessions.map(s => {
-                const m = s.metrics || {};
-                const label = typeLabel[s.type] || s.type;
-                const dateStr = new Date(s.ts).toLocaleDateString(isEs ? 'es-ES' : 'en-US');
-                let metric = '';
-                if (s.type === 'tapping') metric = `${m.bpm || '—'} BPM · Jitter ${m.jitter || '—'}%`;
-                if (s.type === 'drawing') metric = `${isEs ? 'Estabilidad' : 'Stability'} ${m.stability || '—'}%`;
-                if (s.type === 'vocal') metric = `${isEs ? 'Estabilidad' : 'Stability'} ${m.stability || '—'}%`;
-                if (s.type === 'breathing') metric = `${m.cycles || '—'} ${isEs ? 'ciclos' : 'cycles'} · ${m.duration || '—'}s`;
-                return `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:12px;">
-              <span><strong>${label}</strong> <span style="color:#94a3b8;">· FASE ${s.phase || 'ON'}</span></span>
-              <span style="color:#475569;">${metric}</span>
-              <span style="color:#94a3b8;font-size:11px;">${dateStr}</span>
-            </div>`;
-            }).join('')}
-        </div>`;
-        })()}
-      <div style="border:1px solid #e2e8f0;border-radius:10px;padding:18px;margin-bottom:22px;">
-        <div style="font-weight:700;font-size:11px;color:#64748b;margin-bottom:14px;text-transform:uppercase;">💊 ${state.lang === 'es' ? 'Medicación' : 'Medication'}</div>
-        ${state.medications.map(m => `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f1f5f9;">
-            <span style="font-weight:600;">${m.name}</span>
-            <div style="display:flex;gap:10px;align-items:center;">
-              <span style="color:#64748b;">${m.time}</span>
-              <span style="background:${m.taken ? '#dcfce7' : '#fef9c3'};color:${m.taken ? '#16a34a' : '#ca8a04'};padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">${m.taken ? (state.lang === 'es' ? 'Tomado' : 'Taken') : (state.lang === 'es' ? 'Pendiente' : 'Pending')}</span>
-            </div>
-          </div>`).join('')}
-      </div>
-      <div style="border-top:2px solid #e2e8f0;padding-top:16px;text-align:center;color:#94a3b8;font-size:10px;">
-        <div>NeuroVida PRO · ${today}</div>
-        <div style="margin-top:4px;font-weight:700;">HIPAA COMPLIANT · RGPD · Cifrado NVP-2026</div>
-      </div>
-    </div>`;
+    setFont(8, 'bold', 100, 116, 139);
+    doc.text(isEs ? 'TEST DE TAPPING' : 'TAPPING TEST', ML, y + 5);
+    doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.3);
+    doc.rect(ML, y + 7, CW, 36);
 
-    const container = document.createElement('div');
-    container.innerHTML = html;
-    container.style.cssText = 'position:absolute;left:-9999px;top:0;';
-    document.body.appendChild(container);
-    html2pdf().set({
-        margin: [8, 8],
-        filename: `NeuroVida_${name.replace(/\s/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
-        image: { type: 'jpeg', quality: 0.97 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).from(container).save().then(() => {
-        document.body.removeChild(container);
-        logAudit('Reporte PDF exportado');
-    });
+    const bW = (CW - 6) / 3;
+    _pdfRect(doc, ML + 2, y + 9, bW, 32, 240, 253, 244);
+    _pdfRect(doc, ML + 4 + bW, y + 9, bW, 32, 239, 246, 255);
+    _pdfRect(doc, ML + 6 + bW * 2, y + 9, bW, 32, 248, 250, 252);
+
+    setFont(18, 'bold', 16, 185, 129);
+    doc.text(String(tapCount), ML + 2 + bW / 2, y + 24, { align: 'center' });
+    setFont(8, 'normal', 100, 116, 139);
+    doc.text(isEs ? 'Taps' : 'Taps', ML + 2 + bW / 2, y + 30, { align: 'center' });
+
+    setFont(18, 'bold', 59, 130, 246);
+    doc.text(avgMs > 0 ? avgMs + 'ms' : 'N/A', ML + 4 + bW + bW / 2, y + 24, { align: 'center' });
+    setFont(8, 'normal', 100, 116, 139);
+    doc.text(isEs ? 'Intervalo Medio' : 'Avg Interval', ML + 4 + bW + bW / 2, y + 30, { align: 'center' });
+
+    setFont(14, 'bold', 16, 185, 129);
+    doc.text(tapValuation, ML + 6 + bW * 2 + bW / 2, y + 24, { align: 'center' });
+    setFont(8, 'normal', 100, 116, 139);
+    doc.text(isEs ? 'Valoracion' : 'Rating', ML + 6 + bW * 2 + bW / 2, y + 30, { align: 'center' });
+    y += 48;
+
+    // ── TODOS LOS INFORMES MÉDICOS ──────────────────────────
+    const allReports = state.medicalReports || [];
+    if (allReports.length > 0) {
+        checkPage(14);
+        setFont(8, 'bold', 100, 116, 139);
+        doc.text(
+            isEs
+                ? `INFORMES MEDICOS - ANALISIS IA (${allReports.length})`
+                : `MEDICAL REPORTS - AI ANALYSIS (${allReports.length})`,
+            ML, y + 5
+        );
+        y += 10;
+
+        allReports.forEach((rep, idx) => {
+            const diag  = rep.diagnostico_principal || rep.diagnosis || '—';
+            const meds  = rep.medicacion_activa || rep.medicacion || '';
+            const recs  = rep.recomendaciones || rep.analysis || '—';
+            const src   = rep.source || rep.fileName || (isEs ? 'Informe' : 'Report');
+            const isCrit = rep.isCritical || false;
+
+            // Calcular altura del bloque antes de dibujarlo
+            doc.setFontSize(9);
+            const diagLines = _pdfWrapText(doc, diag, CW - 12);
+            const recsLines = _pdfWrapText(doc, recs, CW - 12);
+            const medsLines = meds ? _pdfWrapText(doc, meds, CW - 12) : [];
+            const metricsObj = rep.metricas || {};
+            const metricPairs = Object.entries(metricsObj).filter(([, v]) => v);
+            const metricsH = metricPairs.length > 0 ? Math.ceil(metricPairs.length / 3) * 7 + 10 : 0;
+            const blockH = 14
+                + diagLines.length * 5 + 6
+                + (medsLines.length ? medsLines.length * 5 + 10 : 0)
+                + recsLines.length * 5 + 10
+                + (isCrit ? 10 : 0)
+                + metricsH;
+
+            checkPage(blockH + 6);
+
+            // Fondo del bloque — rojo suave si crítico, azul suave si normal
+            if (isCrit) {
+                _pdfRect(doc, ML, y, CW, blockH, 254, 242, 242);
+                doc.setDrawColor(252, 165, 165); doc.setLineWidth(0.3);
+                doc.rect(ML, y, CW, blockH);
+            } else {
+                _pdfRect(doc, ML, y, CW, blockH, 248, 250, 252);
+                doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.3);
+                doc.rect(ML, y, CW, blockH);
+            }
+            // Barra lateral de color
+            _pdfRect(doc, ML, y, 3, blockH, isCrit ? 239 : 59, isCrit ? 68 : 130, isCrit ? 68 : 246);
+
+            let iy = y + 7;
+
+            // Número de informe + nombre archivo
+            setFont(7, 'bold', 148, 163, 184);
+            doc.text(`#${idx + 1}`, ML + 5, iy);
+            setFont(10, 'bold', 30, 41, 59);
+            const srcLines = _pdfWrapText(doc, src, CW - 50);
+            doc.text(srcLines[0] || src, ML + 12, iy);
+            // Estado badge
+            if (isCrit) {
+                setFont(7, 'bold', 220, 38, 38);
+                doc.text(isEs ? '● CRITICO' : '● CRITICAL', PW - MR - 2, iy, { align: 'right' });
+            } else {
+                setFont(7, 'bold', 16, 185, 129);
+                doc.text(isEs ? '● ESTABLE' : '● STABLE', PW - MR - 2, iy, { align: 'right' });
+            }
+            // Fecha
+            setFont(7, 'normal', 148, 163, 184);
+            doc.text(rep.date || '', PW - MR - 2, iy + 5, { align: 'right' });
+            // Estadio si existe
+            if (rep.estadio) {
+                setFont(7, 'bold', 124, 58, 237);
+                doc.text(rep.estadio, ML + 12, iy + 5);
+            }
+            iy += 12;
+
+            // Diagnóstico
+            setFont(7, 'bold', 100, 116, 139);
+            doc.text(isEs ? 'DIAGNOSTICO' : 'DIAGNOSIS', ML + 5, iy);
+            iy += 5;
+            setFont(9, 'bold', isCrit ? 220 : 29, isCrit ? 38 : 78, isCrit ? 38 : 216);
+            doc.text(diagLines, ML + 5, iy);
+            iy += diagLines.length * 5 + 4;
+
+            // Alerta crítica
+            if (isCrit) {
+                setFont(8, 'bold', 220, 38, 38);
+                doc.text(
+                    isEs ? '! Consulte con su especialista antes de cualquier ejercicio.'
+                         : '! Consult your specialist before any exercise.',
+                    ML + 5, iy
+                );
+                iy += 8;
+            }
+
+            // Medicación
+            if (medsLines.length) {
+                setFont(7, 'bold', 100, 116, 139);
+                doc.text(isEs ? 'MEDICACION' : 'MEDICATION', ML + 5, iy);
+                iy += 5;
+                setFont(9, 'normal', 22, 163, 74);
+                doc.text(medsLines, ML + 5, iy);
+                iy += medsLines.length * 5 + 4;
+            }
+
+            // Recomendaciones
+            setFont(7, 'bold', 100, 116, 139);
+            doc.text(isEs ? 'RECOMENDACIONES' : 'RECOMMENDATIONS', ML + 5, iy);
+            iy += 5;
+            setFont(9, 'normal', 71, 85, 105);
+            doc.text(recsLines, ML + 5, iy);
+            iy += recsLines.length * 5 + 4;
+
+            // Métricas clínicas
+            if (metricPairs.length > 0) {
+                setFont(7, 'bold', 100, 116, 139);
+                doc.text(isEs ? 'METRICAS' : 'METRICS', ML + 5, iy);
+                iy += 5;
+                const colW = CW / 3;
+                metricPairs.forEach(([k, v], mi) => {
+                    const col = mi % 3;
+                    const row = Math.floor(mi / 3);
+                    const mx2 = ML + 5 + col * colW;
+                    const my2 = iy + row * 7;
+                    setFont(7, 'bold', 100, 116, 139);
+                    doc.text(k.toUpperCase() + ':', mx2, my2);
+                    setFont(8, 'bold', 30, 41, 59);
+                    doc.text(String(v), mx2 + 14, my2);
+                });
+                iy += Math.ceil(metricPairs.length / 3) * 7;
+            }
+
+            y = iy + 8;
+        });
+    }
+
+    // ── SESIONES DE REHABILITACIÓN ──────────────────────────
+    const sessions = window.NVHistory ? NVHistory.getAll().slice(0, 5) : [];
+    if (sessions.length) {
+        checkPage(20 + sessions.length * 10);
+        setFont(8, 'bold', 100, 116, 139);
+        doc.text(isEs ? 'ULTIMAS SESIONES DE REHABILITACION' : 'LATEST REHABILITATION SESSIONS', ML, y + 5);
+        doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.3);
+        doc.rect(ML, y + 7, CW, sessions.length * 9 + 4);
+        const typeLabel = { tapping: isEs ? 'Temblor' : 'Tremor', drawing: isEs ? 'Dibujo' : 'Drawing', vocal: 'Vocal', breathing: isEs ? 'Respiracion' : 'Breathing' };
+        let ry = y + 13;
+        sessions.forEach((s, i) => {
+            const m = s.metrics || {};
+            const label = typeLabel[s.type] || s.type;
+            const dateStr = new Date(s.ts).toLocaleDateString(isEs ? 'es-ES' : 'en-US');
+            let metric = '';
+            if (s.type === 'tapping') metric = `${m.bpm || '—'} BPM · Jitter ${m.jitter || '—'}%`;
+            if (s.type === 'drawing') metric = `${isEs ? 'Estabilidad' : 'Stability'} ${m.stability || '—'}%`;
+            if (s.type === 'vocal') metric = `${isEs ? 'Estabilidad' : 'Stability'} ${m.stability || '—'}%`;
+            if (s.type === 'breathing') metric = `${m.cycles || '—'} ${isEs ? 'ciclos' : 'cycles'} · ${m.duration || '—'}s`;
+            if (i > 0) { doc.setDrawColor(241, 245, 249); doc.line(ML + 2, ry - 3, PW - MR - 2, ry - 3); }
+            setFont(9, 'bold', 30, 41, 59);
+            doc.text(label, ML + 3, ry);
+            setFont(9, 'normal', 148, 163, 184);
+            doc.text(`FASE ${s.phase || 'ON'}`, ML + 40, ry);
+            setFont(9, 'normal', 71, 85, 105);
+            doc.text(metric, ML + 70, ry);
+            setFont(8, 'normal', 148, 163, 184);
+            doc.text(dateStr, PW - MR, ry, { align: 'right' });
+            ry += 9;
+        });
+        y = ry + 6;
+    }
+
+    // ── MEDICACIÓN ──────────────────────────────────────────
+    if (state.medications.length) {
+        checkPage(16 + state.medications.length * 10);
+        setFont(8, 'bold', 100, 116, 139);
+        doc.text(isEs ? 'MEDICACION' : 'MEDICATION', ML, y + 5);
+        doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.3);
+        doc.rect(ML, y + 7, CW, state.medications.length * 9 + 4);
+        let my = y + 13;
+        state.medications.forEach((med, i) => {
+            if (i > 0) { doc.setDrawColor(241, 245, 249); doc.line(ML + 2, my - 3, PW - MR - 2, my - 3); }
+            setFont(10, 'bold', 30, 41, 59);
+            doc.text(med.name, ML + 3, my);
+            setFont(9, 'normal', 100, 116, 139);
+            doc.text(med.time, ML + 90, my);
+            const takenBg = med.taken ? [220, 252, 231] : [254, 249, 195];
+            const takenFg = med.taken ? [22, 163, 74] : [202, 138, 4];
+            _pdfRect(doc, PW - MR - 28, my - 5, 26, 7, ...takenBg);
+            setFont(8, 'bold', ...takenFg);
+            doc.text(med.taken ? (isEs ? 'Tomado' : 'Taken') : (isEs ? 'Pendiente' : 'Pending'), PW - MR - 15, my, { align: 'center' });
+            my += 9;
+        });
+        y = my + 6;
+    }
+
+    // ── FOOTER ──────────────────────────────────────────────
+    checkPage(14);
+    doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.5);
+    doc.line(ML, y, PW - MR, y);
+    setFont(8, 'normal', 148, 163, 184);
+    doc.text(`NeuroTempo PRO · ${today}`, PW / 2, y + 6, { align: 'center' });
+    setFont(8, 'bold', 148, 163, 184);
+    doc.text('HIPAA COMPLIANT · RGPD · Cifrado NVP-2026', PW / 2, y + 11, { align: 'center' });
+
+    doc.save(filename);
+    logAudit('Reporte PDF exportado');
+    showToast(isEs ? 'PDF descargado correctamente' : 'PDF downloaded successfully', 'success');
 }
 
 // ============================================================
@@ -3930,6 +4279,148 @@ async function runReportAnalysisBatch() {
 }
 
 // ── Eliminar informe por id ───────────────────────────────────
+function downloadSingleReport(id) {
+    const r = (state.medicalReports || []).find(x => String(x.id) === String(id));
+    if (!r) { showToast('Informe no encontrado', 'error'); return; }
+    if (!window.jspdf) { showToast('Librería PDF no disponible', 'error'); return; }
+
+    const { jsPDF } = window.jspdf;
+    const isEs = state.lang === 'es';
+    const today = new Date().toLocaleDateString(isEs ? 'es-ES' : 'en-US', { year:'numeric', month:'long', day:'numeric' });
+    const patient = state.user ? state.user.name : (isEs ? 'Paciente' : 'Patient');
+    const srcName = (r.source || r.fileName || 'informe').replace(/[^a-zA-Z0-9]/g, '_').slice(0, 30);
+    const filename = `NV_Informe_${srcName}_${new Date().toISOString().slice(0,10)}.pdf`;
+
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const PW = 210, PH = 297, ML = 14, MR = 14, CW = PW - ML - MR;
+    let y = 0;
+
+    const setFont = (size, style, r2, g2, b2) => {
+        doc.setFontSize(size);
+        doc.setFont('helvetica', style || 'normal');
+        doc.setTextColor(r2 ?? 30, g2 ?? 41, b2 ?? 59);
+    };
+    const checkPage = (needed) => {
+        if (y + needed > PH - 14) { doc.addPage(); y = 14; }
+    };
+
+    // ── HEADER ──────────────────────────────────────────────
+    doc.setFillColor(16, 185, 129);
+    doc.rect(0, 0, PW, 28, 'F');
+    setFont(20, 'bold', 255, 255, 255);
+    doc.text('NEUROTEMPO PRO', ML, 12);
+    setFont(9, 'normal', 220, 252, 231);
+    doc.text(isEs ? 'Analisis de Informe Medico' : 'Medical Report Analysis', ML, 19);
+    doc.text(today, ML, 24);
+    setFont(8, 'bold', 255, 255, 255);
+    doc.text('HIPAA COMPLIANT', PW - MR - 36, 16);
+    y = 34;
+
+    // ── PACIENTE + FICHERO ───────────────────────────────────
+    checkPage(34);
+    doc.setFillColor(240, 249, 255);
+    doc.rect(ML, y, CW, 30, 'F');
+    doc.setFillColor(59, 130, 246);
+    doc.rect(ML, y, 3, 30, 'F');
+    setFont(10, 'bold', 30, 41, 59);
+    doc.text((isEs ? 'Paciente: ' : 'Patient: ') + patient, ML + 6, y + 8);
+    setFont(10, 'normal', 71, 85, 105);
+    doc.text((isEs ? 'Archivo: ' : 'File: ') + (r.source || r.fileName || '—'), ML + 6, y + 15);
+    doc.text((isEs ? 'Fecha analisis: ' : 'Analysis date: ') + (r.date || today), ML + 6, y + 22);
+    if (r.estadio) {
+        setFont(10, 'bold', 124, 58, 237);
+        doc.text((isEs ? 'Estadio: ' : 'Stage: ') + r.estadio, ML + 6, y + 29);
+    }
+    y += 36;
+
+    // ── DIAGNÓSTICO ──────────────────────────────────────────
+    checkPage(24);
+    setFont(8, 'bold', 100, 116, 139);
+    doc.text(isEs ? 'DIAGNOSTICO PRINCIPAL' : 'MAIN DIAGNOSIS', ML, y + 5);
+    doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.3);
+    const diagText = r.diagnostico_principal || r.diagnosis || '—';
+    const diagLines = doc.splitTextToSize(diagText, CW - 8);
+    const diagH = diagLines.length * 6 + 14 + (r.isCritical ? 12 : 0);
+    doc.rect(ML, y + 7, CW, diagH);
+    setFont(11, 'bold', 29, 78, 216);
+    doc.text(diagLines, ML + 4, y + 15);
+    if (r.isCritical) {
+        const alertY = y + 15 + diagLines.length * 6 + 2;
+        doc.setFillColor(254, 242, 242);
+        doc.rect(ML + 4, alertY, CW - 8, 10, 'F');
+        setFont(9, 'bold', 220, 38, 38);
+        doc.text(isEs ? 'ALERTA CRITICA: consulte con su especialista' : 'CRITICAL ALERT: consult your specialist', ML + 6, alertY + 7);
+    }
+    y += diagH + 12;
+
+    // ── MÉTRICAS CLÍNICAS ────────────────────────────────────
+    const metricsObj = r.metricas || {};
+    const metricPairs = Object.entries({
+        TA: metricsObj.ta, FC: metricsObj.fc, FEVI: metricsObj.fevi,
+        PAP: metricsObj.pap, Glucosa: metricsObj.glucosa,
+        SpO2: metricsObj.spo2, Peso: metricsObj.peso, IMC: metricsObj.imc
+    }).filter(([, v]) => v);
+
+    if (metricPairs.length) {
+        checkPage(16 + Math.ceil(metricPairs.length / 2) * 9);
+        setFont(8, 'bold', 100, 116, 139);
+        doc.text(isEs ? 'METRICAS CLINICAS' : 'CLINICAL METRICS', ML, y + 5);
+        const rows = Math.ceil(metricPairs.length / 2);
+        const mH = rows * 9 + 8;
+        doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.3);
+        doc.rect(ML, y + 7, CW, mH);
+        metricPairs.forEach(([k, v], i) => {
+            const col = i % 2, row = Math.floor(i / 2);
+            const mx = ML + 4 + col * (CW / 2);
+            const my2 = y + 14 + row * 9;
+            setFont(8, 'bold', 100, 116, 139);
+            doc.text(k + ':', mx, my2);
+            setFont(10, 'bold', 30, 41, 59);
+            doc.text(String(v), mx + 20, my2);
+        });
+        y += mH + 12;
+    }
+
+    // ── MEDICACIÓN ───────────────────────────────────────────
+    checkPage(22);
+    setFont(8, 'bold', 100, 116, 139);
+    doc.text(isEs ? 'MEDICACION ACTIVA' : 'ACTIVE MEDICATION', ML, y + 5);
+    const medsRaw = r.medicacion_activa || r.medicacion || '—';
+    const medsLines = doc.splitTextToSize(medsRaw, CW - 8);
+    const medsH = medsLines.length * 6 + 10;
+    doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.3);
+    doc.rect(ML, y + 7, CW, medsH);
+    setFont(10, 'normal', 29, 78, 216);
+    doc.text(medsLines, ML + 4, y + 14);
+    y += medsH + 12;
+
+    // ── RECOMENDACIONES ──────────────────────────────────────
+    checkPage(22);
+    setFont(8, 'bold', 100, 116, 139);
+    doc.text(isEs ? 'RECOMENDACIONES' : 'RECOMMENDATIONS', ML, y + 5);
+    const recsText = r.recomendaciones || r.analysis || '—';
+    const recsLines = doc.splitTextToSize(recsText, CW - 8);
+    const recsH = recsLines.length * 6 + 10;
+    doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.3);
+    doc.rect(ML, y + 7, CW, recsH);
+    setFont(10, 'normal', 51, 65, 85);
+    doc.text(recsLines, ML + 4, y + 14);
+    y += recsH + 12;
+
+    // ── FOOTER ───────────────────────────────────────────────
+    checkPage(14);
+    doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.5);
+    doc.line(ML, y, PW - MR, y);
+    setFont(8, 'normal', 148, 163, 184);
+    doc.text(`NeuroTempo PRO · ${today}`, PW / 2, y + 6, { align: 'center' });
+    setFont(8, 'bold', 148, 163, 184);
+    doc.text('HIPAA COMPLIANT · RGPD · Cifrado NVP-2026', PW / 2, y + 11, { align: 'center' });
+
+    doc.save(filename);
+    logAudit('Informe individual descargado: ' + (r.source || id));
+    showToast(isEs ? 'PDF descargado correctamente' : 'PDF downloaded successfully', 'success');
+}
+
 function deleteReport(id) {
     const isEs = state.lang === 'es';
     state.medicalReports = state.medicalReports.filter(r => String(r.id) !== String(id));
@@ -4468,13 +4959,13 @@ async function sendMedicationAlert(medName, medTime) {
     try {
         if ('serviceWorker' in navigator) {
             const reg = await navigator.serviceWorker.ready;
-            await reg.showNotification('💊 NeuroVida — ' + (isEs ? 'Medicación' : 'Medication'), opts);
+            await reg.showNotification('💊 NeuroTempo — ' + (isEs ? 'Medicación' : 'Medication'), opts);
             return;
         }
     } catch (_) { /* sin SW activo */ }
 
     // Fallback sin actions (navegadores sin SW)
-    new Notification('💊 NeuroVida — ' + (isEs ? 'Medicación' : 'Medication'), {
+    new Notification('💊 NeuroTempo — ' + (isEs ? 'Medicación' : 'Medication'), {
         body: opts.body,
         tag: opts.tag,
         icon: opts.icon,
@@ -4709,7 +5200,7 @@ function openSessionDetail(id) {
     const shareText = encodeURIComponent(
         `${t('ev_share_title')}\n${label} · ${tsText}\nPhase: ${phase}\n` +
         Object.entries(mx).map(([k, v]) => `${k}: ${v}`).join(' · ') +
-        `\n\nNeuroVida PRO — ${isEs ? 'Ecosistema Digital Parkinson' : 'Parkinson Digital Ecosystem'}`
+        `\n\nNeuroTempo PRO — ${isEs ? 'Ecosistema Digital Parkinson' : 'Parkinson Digital Ecosystem'}`
     );
 
     const overlay = document.createElement('div');
@@ -4813,7 +5304,12 @@ function closeSessionDetail() {
 // STARTUP
 // ============================================================
 window.addEventListener('DOMContentLoaded', () => {
-    // Detectar y aplicar idioma inicial
+    // Inicializar i18n ANTES de renderizar cualquier pantalla.
+    // Login siempre en español — el idioma del usuario se aplica tras iniciar sesión.
+    if (window.NVI18n) {
+        NVI18n.init(state.user ? state.lang : 'es');
+    }
+
     if (state.user) {
         initApp();
     } else {

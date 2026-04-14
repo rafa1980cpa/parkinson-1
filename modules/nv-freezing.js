@@ -1,5 +1,5 @@
 /**
- * NeuroVida — Módulo 2: Pulso Sónico de Rescate
+ * NeuroTempo — Módulo 2: Pulso Sónico de Rescate
  * Detección de congelación de marcha (Freezing of Gait - FOG)
  * vía DeviceMotion + Web Audio API terapéutico (80 Hz, 120 BPM)
  *

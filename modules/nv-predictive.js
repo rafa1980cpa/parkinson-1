@@ -1,5 +1,5 @@
 /**
- * NeuroVida — Módulo 4: Notificaciones Predictivas (Gemelo Digital)
+ * NeuroTempo — Módulo 4: Notificaciones Predictivas (Gemelo Digital)
  * Estima bajadas de energía basadas en el tiempo desde la última medicación.
  * Muestra alerta no invasiva con respuesta "Bien" / "Regular".
  *

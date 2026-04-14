@@ -1,5 +1,5 @@
 /**
- * NeuroVida PRO — Motor de Análisis Clínico (v2 — Nivel Certificación)
+ * NeuroTempo PRO — Motor de Análisis Clínico (v2 — Nivel Certificación)
  * ─────────────────────────────────────────────────────────────────────
  * OCR:  PDF.js (PDFs) + Tesseract.js spa+eng (imágenes)
  * NLP:  Extracción multi-dominio local — Neuro · Cardio · Psico · Métricas
@@ -30,6 +30,9 @@
             .replace(/(\d)\s+([,\.\/])\s+(\d)/g, '$1$2$3')  // "12 . 5" → "12.5"
             .replace(/([a-záéíóú])\s+([a-záéíóú])/gi, (m, a, b) =>
                 a.length === 1 || b.length === 1 ? a + b : m)  // pegar letras sueltas OCR
+            // Separar palabras CamelCase concatenadas por extracción de tablas PDF
+            .replace(/([a-záéíóú])([A-Z][a-záéíóú])/g, '$1 $2')
+            .replace(/\s{2,}/g, ' ')
             .trim();
     }
 
@@ -267,14 +270,58 @@
             'venlafaxina', 'venlafaxine', 'clonazepam', 'lorazepam', 'quetiapina',
             'quetiapine', 'risperidona', 'risperidone', 'donepezilo', 'donepezil',
             'rivastigmina', 'rivastigmine', 'memantina', 'memantine',
+            'mirtazapina', 'mirtazapine',
         ];
+
+        // Nombres canónicos en español para medicamentos reconocidos
+        const _MED_ES_NAME = {
+            'levodopa/carbidopa': 'Levodopa/Carbidopa', 'levodopa carbidopa': 'Levodopa/Carbidopa',
+            'levodopa': 'Levodopa', 'carbidopa': 'Carbidopa',
+            'ropinirol': 'Ropinirol', 'ropinirole': 'Ropinirol',
+            'pramipexol': 'Pramipexol', 'pramipexole': 'Pramipexol',
+            'rotigotina': 'Rotigotina', 'rotigotine': 'Rotigotina',
+            'entacapona': 'Entacapona', 'entacapone': 'Entacapona',
+            'rasagilina': 'Rasagilina', 'rasagiline': 'Rasagilina',
+            'selegilina': 'Selegilina', 'selegiline': 'Selegilina',
+            'amantadina': 'Amantadina', 'amantadine': 'Amantadina',
+            'sinemet': 'Sinemet (Levodopa/Carbidopa)', 'madopar': 'Madopar',
+            'stalevo': 'Stalevo', 'azilect': 'Azilect', 'neupro': 'Neupro',
+            'bisoprolol': 'Bisoprolol', 'carvedilol': 'Carvedilol',
+            'metoprolol': 'Metoprolol', 'enalapril': 'Enalapril',
+            'lisinopril': 'Lisinopril', 'ramipril': 'Ramipril',
+            'losartan': 'Losartan', 'valsartan': 'Valsartan',
+            'amlodipino': 'Amlodipino', 'amlodipine': 'Amlodipino',
+            'furosemida': 'Furosemida', 'furosemide': 'Furosemida',
+            'torasemida': 'Torasemida', 'torasemide': 'Torasemida',
+            'espironolactona': 'Espironolactona', 'spironolactone': 'Espironolactona',
+            'digoxina': 'Digoxina', 'digoxin': 'Digoxina',
+            'amiodarona': 'Amiodarona', 'amiodarone': 'Amiodarona',
+            'warfarina': 'Warfarina', 'warfarin': 'Warfarina',
+            'apixaban': 'Apixaban', 'rivaroxaban': 'Rivaroxaban',
+            'dabigatran': 'Dabigatran', 'clopidogrel': 'Clopidogrel',
+            'aspirina': 'Aspirina', 'aspirin': 'Aspirina',
+            'atorvastatina': 'Atorvastatina', 'atorvastatin': 'Atorvastatina',
+            'rosuvastatina': 'Rosuvastatina', 'rosuvastatin': 'Rosuvastatina',
+            'neparvis': 'Neparvis', 'entresto': 'Entresto',
+            'empagliflozina': 'Empagliflozina', 'dapagliflozina': 'Dapagliflozina',
+            'sertralina': 'Sertralina', 'sertraline': 'Sertralina',
+            'escitalopram': 'Escitalopram', 'fluoxetina': 'Fluoxetina', 'fluoxetine': 'Fluoxetina',
+            'venlafaxina': 'Venlafaxina', 'venlafaxine': 'Venlafaxina',
+            'clonazepam': 'Clonazepam', 'lorazepam': 'Lorazepam',
+            'quetiapina': 'Quetiapina', 'quetiapine': 'Quetiapina',
+            'risperidona': 'Risperidona', 'risperidone': 'Risperidona',
+            'donepezilo': 'Donepezilo', 'donepezil': 'Donepezilo',
+            'rivastigmina': 'Rivastigmina', 'rivastigmine': 'Rivastigmina',
+            'memantina': 'Memantina', 'memantine': 'Memantina',
+            'mirtazapina': 'Mirtazapina', 'mirtazapine': 'Mirtazapina',
+        };
 
         const found = new Map();
         for (const med of allMeds) {
             const safeKey = med.replace(/[\/\-]/g, '\\/');
             if (new RegExp(`\\b${safeKey}\\b`, 'i').test(lower)) {
-                const ctx = text.match(new RegExp(`.{0,30}\\b${safeKey}\\b.{0,50}`, 'i'));
-                const label = ctx ? ctx[0].trim().replace(/\s+/g, ' ').slice(0, 80) : med;
+                // Usar nombre canónico en español — evita contexto garbled de tablas PDF
+                const label = _MED_ES_NAME[med.toLowerCase()] || med;
                 const dedupeKey = med.split('/')[0].toLowerCase();
                 if (!found.has(dedupeKey)) found.set(dedupeKey, label);
             }
@@ -290,39 +337,312 @@
     }
 
     // ─────────────────────────────────────────────────────────
+    // DETECTOR DE IDIOMA DEL DOCUMENTO
+    // Devuelve true si el texto del informe es predominantemente inglés
+    // ─────────────────────────────────────────────────────────
+    function _isDocumentEnglish(text) {
+        const lower = text.toLowerCase();
+        let enScore = 0, esScore = 0;
+        // Marcadores fuertes en inglés
+        const enMarkers = [
+            'the patient', 'clinical report', 'patient name', 'date of birth',
+            'medical history', 'physical examination', 'assessment', 'plan of treatment',
+            'follow-up', 'diagnosis:', 'primary diagnosis', 'chief complaint',
+            'history of', 'presenting with', 'treatment plan', 'recommendations:',
+            'physician', 'discharge', 'outpatient', 'inpatient', 'prescribed',
+        ];
+        // Marcadores fuertes en español
+        const esMarkers = [
+            'el paciente', 'la paciente', 'informe clínico', 'nombre del paciente',
+            'fecha de nacimiento', 'antecedentes', 'exploración física', 'diagnóstico',
+            'diagnóstico principal', 'plan de tratamiento', 'seguimiento', 'médico',
+            'recomendaciones', 'prescrito', 'tratamiento', 'revisión', 'consulta',
+        ];
+        for (const m of enMarkers) if (lower.includes(m)) enScore++;
+        for (const m of esMarkers) if (lower.includes(m)) esScore++;
+        return enScore > esScore;
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // TRADUCCIÓN BÁSICA DE FRAGMENTOS DE TEXTO EN-ES
+    // Para fragmentos extraídos literalmente de documentos ingleses
+    // ─────────────────────────────────────────────────────────
+    const _EN_ES_PHRASES = [
+        // ── Condiciones clínicas ──────────────────────────────
+        [/\bParkinson\'s [Dd]isease\b/gi,                'Enfermedad de Parkinson'],
+        [/\bHeart [Ff]ailure\b/gi,                       'Insuficiencia Cardiaca'],
+        [/\bMyocardial [Ii]nfarction\b/gi,               'Infarto de Miocardio'],
+        [/\bIschemic [Hh]eart [Dd]isease\b/gi,           'Cardiopatía Isquémica'],
+        [/\bCoronary [Aa]rtery [Dd]isease\b/gi,          'Cardiopatía Coronaria'],
+        [/\bAtrial [Ff]ibrillation\b/gi,                 'Fibrilación Auricular'],
+        [/\bDepressive [Dd]isorder\b/gi,                 'Síndrome Depresivo'],
+        [/\bMajor [Dd]epression\b/gi,                    'Depresión Mayor'],
+        [/\bAnxiety [Dd]isorder\b/gi,                    'Trastorno de Ansiedad'],
+        [/\bAlzheimer\'s [Dd]isease\b/gi,                'Enfermedad de Alzheimer'],
+        [/\bMultiple [Ss]clerosis\b/gi,                   'Esclerosis Múltiple'],
+        [/\bCognitive [Ii]mpairment\b/gi,                'Deterioro Cognitivo'],
+        [/\bCognitive [Dd]ecline\b/gi,                   'Deterioro Cognitivo'],
+        [/\bAmyotrophic [Ll]ateral [Ss]clerosis\b/gi,    'Esclerosis Lateral Amiotrófica'],
+        [/\bChronic [Kk]idney [Dd]isease\b/gi,           'Enfermedad Renal Crónica'],
+        [/\bRenal [Ff]ailure\b/gi,                       'Insuficiencia Renal'],
+        [/\bPulmonary [Hh]ypertension\b/gi,              'Hipertensión Pulmonar'],
+        [/\bValvular [Dd]isease\b/gi,                    'Valvulopatía'],
+        [/\bHypertension\b/gi,                           'Hipertensión'],
+        [/\bDiabetes [Mm]ellitus\b/gi,                   'Diabetes Mellitus'],
+        [/\bType 2 [Dd]iabetes\b/gi,                     'Diabetes Tipo 2'],
+        [/\bHypothyroidism\b/gi,                         'Hipotiroidismo'],
+        [/\bHyperthyroidism\b/gi,                        'Hipertiroidismo'],
+        [/\bOsteoporosis\b/gi,                           'Osteoporosis'],
+        [/\bOsteoarthritis\b/gi,                         'Osteoartritis'],
+        [/\bRheumatoid [Aa]rthritis\b/gi,                'Artritis Reumatoide'],
+        [/\bCOPD\b/g,                                    'EPOC'],
+        [/\bAsthma\b/gi,                                 'Asma'],
+        [/\bEpilepsy\b/gi,                               'Epilepsia'],
+        [/\bMigraine\b/gi,                               'Migraña'],
+        [/\bObstructive\s*[Ss]leep\s*[Aa]pnea\b/gi,     'Apnea del Sueño'],
+        [/\bAnemia\b/gi,                                 'Anemia'],
+        [/\bBradykinesia\b/gi,                           'Bradicinesia'],
+        [/\bTremor\b/gi,                                 'Temblor'],
+        [/\bRigidity\b/gi,                               'Rigidez'],
+        [/\bGait [Dd]isturbance\b/gi,                    'Alteración de la Marcha'],
+        [/\bGait [Ff]reezing\b/gi,                       'Congelación de la Marcha'],
+        [/\bFreezing of [Gg]ait\b/gi,                    'Congelación de la Marcha'],
+        [/\bDysarthria\b/gi,                             'Disartria'],
+        [/\bDysphagia\b/gi,                              'Disfagia'],
+        [/\bHallucinations?\b/gi,                        'Alucinaciones'],
+        [/\bPsychosis\b/gi,                              'Psicosis'],
+        [/\bSleep [Dd]isorder\b/gi,                      'Trastorno del Sueño'],
+        [/\bStroke\b/gi,                                 'Ictus'],
+        [/\bTransient [Ii]schemic [Aa]ttack\b/gi,        'Accidente Isquémico Transitorio'],
+        // ── Métricas y unidades ───────────────────────────────
+        [/\bStage\s+/gi,                                 'Estadio '],
+        [/\bLVEF\b/gi,                                   'FEVI'],
+        [/\bejection fraction\b/gi,                      'fracción de eyección'],
+        [/\bHR\b/g,                                      'FC'],
+        [/\bBP\b/g,                                      'TA'],
+        [/\bO2\s*[Ss]at/gi,                              'SpO2'],
+        [/\bGlucose\b/gi,                                'Glucosa'],
+        [/\bHemoglobin\b/gi,                             'Hemoglobina'],
+        [/\bCreatinine\b/gi,                             'Creatinina'],
+        [/\bCholesterol\b/gi,                            'Colesterol'],
+        [/\bBMI\b/g,                                     'IMC'],
+        // ── Dosificación y posología ──────────────────────────
+        [/\bthree times daily\b/gi,                      'tres veces al día'],
+        [/\bthree times a day\b/gi,                      'tres veces al día'],
+        [/\btwice daily\b/gi,                            'dos veces al día'],
+        [/\btwice a day\b/gi,                            'dos veces al día'],
+        [/\bonce daily\b/gi,                             'una vez al día'],
+        [/\bonce a day\b/gi,                             'una vez al día'],
+        [/\bfour times daily\b/gi,                       'cuatro veces al día'],
+        [/\bfour times a day\b/gi,                       'cuatro veces al día'],
+        [/\bevery (\d+) hours?\b/gi,                     'cada $1 horas'],
+        [/\bas needed\b/gi,                              'según necesidad'],
+        [/\bpro re nata\b/gi,                            'según necesidad'],
+        [/\bwith meals?\b/gi,                            'con las comidas'],
+        [/\bat bedtime\b/gi,                             'al acostarse'],
+        [/\bin the morning\b/gi,                         'por la mañana'],
+        [/\bat night\b/gi,                               'por la noche'],
+        [/\bin the evening\b/gi,                         'por la tarde'],
+        [/\btablets?\b/gi,                               'comprimidos'],
+        [/\bcapsules?\b/gi,                              'cápsulas'],
+        [/\bpatch\b/gi,                                  'parche'],
+        [/\bdrop[s]?\b/gi,                               'gotas'],
+        // ── Instrucciones clínicas y recomendaciones ─────────
+        [/continue current treatment/gi,                 'Mantener tratamiento actual'],
+        [/\bunder specialist supervision\b/gi,           'bajo supervisión especializada'],
+        [/\bunder medical supervision\b/gi,              'bajo supervisión médica'],
+        [/\blow.intensity (motor )?rehabilitation/gi,    'Rehabilitación motora de baja intensidad'],
+        [/\breview in (\d+) months?\b/gi,                'Revisión en $1 meses'],
+        [/\bfollow.up in (\d+) (weeks?|months?)\b/gi,   'Revisión en $1 $2'],
+        [/\bno high.intensity exercise\b/gi,             'Sin ejercicio de alta intensidad'],
+        [/\bconsult your specialist\b/gi,                'Consulte con su especialista'],
+        [/\bbefore any exercise\b/gi,                    'antes de iniciar cualquier ejercicio'],
+        [/\bphysical therapy\b/gi,                       'Fisioterapia'],
+        [/\bspeech therapy\b/gi,                         'Logopedia'],
+        [/\boccupational therapy\b/gi,                   'Terapia ocupacional'],
+        [/\bmedication adjusted\b/gi,                    'Medicación ajustada'],
+        [/\bmaintain current medication\b/gi,            'Mantener medicación actual'],
+        [/\breduce activity\b/gi,                        'Reducir actividad física'],
+        [/\bregular monitoring\b/gi,                     'Seguimiento regular'],
+        [/\bnext appointment\b/gi,                       'Próxima revisión'],
+        [/\bblood pressure control\b/gi,                 'Control de tensión arterial'],
+        [/\bheart rate control\b/gi,                     'Control de frecuencia cardiaca'],
+        [/\bweight control\b/gi,                         'Control de peso'],
+        [/\bhospitalization\b/gi,                        'Hospitalización'],
+        [/\bdischarge\b/gi,                              'Alta médica'],
+        [/\bwarm.up\b/gi,                                'calentamiento'],
+        [/\bcool.down\b/gi,                              'enfriamiento'],
+        [/\blifestyle changes?\b/gi,                     'cambios en el estilo de vida'],
+        [/\bdiet changes?\b/gi,                          'cambios en la dieta'],
+        [/\bsodium restriction\b/gi,                     'restricción de sodio'],
+        [/\bfluid restriction\b/gi,                      'restricción de líquidos'],
+        [/\bweight loss\b/gi,                            'pérdida de peso'],
+        // ── Términos estructurales de informe ────────────────
+        [/\bprimary diagnosis\b/gi,                      'Diagnóstico principal'],
+        [/\bsecondary diagnosis\b/gi,                    'Diagnóstico secundario'],
+        [/\bclinical impression\b/gi,                    'Impresión clínica'],
+        [/\btreatment plan\b/gi,                         'Plan de tratamiento'],
+        [/\bmedical history\b/gi,                        'Antecedentes'],
+        [/\bprescribed\b/gi,                             'prescrito'],
+        [/\bprescription\b/gi,                           'prescripción'],
+        [/\bdiagnosis\b/gi,                              'diagnóstico'],
+        [/\bassessment\b/gi,                             'evaluación'],
+        [/\bsymptoms?\b/gi,                              'síntomas'],
+        [/\bfindings?\b/gi,                              'hallazgos'],
+        [/\bexamination\b/gi,                            'exploración'],
+        [/\brecommendations?\b/gi,                       'recomendaciones'],
+        [/\bconclusions?\b/gi,                           'conclusiones'],
+        [/\btreatment\b/gi,                              'tratamiento'],
+        [/\bmedication\b/gi,                             'medicación'],
+        [/\bthe patient\b/gi,                            'el/la paciente'],
+        [/\bpatient\b/gi,                                'paciente'],
+        [/\bphysician\b/gi,                              'médico'],
+        [/\bspecialist\b/gi,                             'especialista'],
+        // ── Clínica cardiovascular y neurológica específica ──
+        [/\bHFrEF\b/gi,                                          'ICFEr (Insuficiencia Cardiaca)'],
+        [/\bFreezing of [Gg]ait\b/gi,                            'Congelación de la Marcha'],
+        [/\bFOG\b/g,                                             'Congelación de Marcha (FOG)'],
+        [/\bventricular dysfunction\b/gi,                        'disfunción ventricular'],
+        [/\bsevere.*ventricular dysfunction\b/gi,                'disfunción ventricular grave'],
+        [/\bLeft [Vv]entricle\b/gi,                              'Ventrículo Izquierdo'],
+        [/\bLeft [Vv]entricular\b/gi,                            'Ventricular Izquierdo'],
+        [/\bdecompensated [Hh]eart [Ff]ailure\b/gi,              'Insuficiencia Cardiaca descompensada'],
+        [/\bischemic origin\b/gi,                                'origen isquémico'],
+        [/\bFunctional [Cc]lass\b/gi,                            'Clase Funcional'],
+        [/\bmultidisciplinary\b/gi,                              'multidisciplinario'],
+        [/\bmotor symptoms?\b/gi,                                'síntomas motores'],
+        [/\bchronic illness\b/gi,                                'enfermedad crónica'],
+        [/\bdyspnea\b/gi,                                        'disnea'],
+        [/\bakinesia\b/gi,                                       'acinesia'],
+        [/\bminimal exertion\b/gi,                               'mínimo esfuerzo'],
+        [/\bidiopathic\b/gi,                                     'idiopática'],
+        [/\banterior [Mm]yocardial [Ii]nfarction\b/gi,           'Infarto de Miocardio anterior'],
+        // ── Recomendaciones específicas ───────────────────
+        [/\bRhythm [Tt]herapy\b/gi,                              'Terapia Rítmica'],
+        [/\bAdherence [Mm]onitoring\b/gi,                        'Seguimiento de Adherencia'],
+        [/\brhythmic\s*(?:auditory\s*)?stimulation\b/gi,         'estimulación auditiva rítmica'],
+        [/\brhythmic metronome\b/gi,                             'metrónomo rítmico'],
+        [/\bgait cadence\b/gi,                                   'cadencia de marcha'],
+        [/\bhospital readmission\b/gi,                           'reingreso hospitalario'],
+        [/\bechocardiograph[yi]?\b/gi,                           'ecocardiografía'],
+        [/\blaboratory tests?\b/gi,                              'análisis de laboratorio'],
+        [/\bstrictly prohibited\b/gi,                            'estrictamente prohibido'],
+        [/\bnightly schedule\b/gi,                               'administración nocturna'],
+        [/\bon an empty stomach\b/gi,                            'en ayunas'],
+        [/\bevery 12h\b/gi,                                      'cada 12 horas'],
+        [/\bas per neurology protocol\b/gi,                      'según protocolo de Neurología'],
+        [/\bmedication compliance\b/gi,                          'cumplimiento de la medicación'],
+        [/\brepeat echocardiography\b/gi,                        'ecocardiografía de control'],
+        [/\bscheduled clinical review\b/gi,                      'revisión clínica programada'],
+        [/\bexceed.*safety.*heart rate thresholds?\b/gi,         'superar umbrales de frecuencia cardiaca de seguridad'],
+        [/\bimprove gait cadence\b/gi,                           'mejorar la cadencia de la marcha'],
+        [/\bavoid hospital readmission\b/gi,                     'evitar el reingreso hospitalario'],
+        // ── Tiempo ───────────────────────────────────────────
+        [/\bweeks?\b/gi, 'semanas'], [/\bmonths?\b/gi, 'meses'],
+        [/\byears?\b/gi, 'años'],    [/\bdays?\b/gi,   'días'],
+    ];
+
+    function _translateToEs(text) {
+        if (!text) return text;
+        let out = text;
+        for (const [rx, rep] of _EN_ES_PHRASES) {
+            out = out.replace(rx, rep);
+        }
+        return out;
+    }
+
+    // Detección de texto concatenado sin espacios (artefacto de extracción PDF)
+    function _isGarbledText(str) {
+        if (!str || str.length < 20) return false;
+        const words = str.trim().split(/\s+/);
+        const maxLen = Math.max(...words.map(w => w.replace(/[^a-zA-Z]/g, '').length));
+        return maxLen > 22;
+    }
+
+    // Síntesis de recomendaciones desde palabras clave cuando el texto está corrupto
+    function _buildRecsFromKeywords(text) {
+        const lower = text.toLowerCase();
+        const items = [];
+        if (/metronome|metr[oó]nomo|rhythm.*gait|gait.*cadence|rhythmic.*stimulat/i.test(lower)) {
+            items.push('Terapia rítmica con metrónomo para mejorar la cadencia de la marcha');
+        }
+        if (/adherence|compliance|strict.*medicat/i.test(lower)) {
+            items.push('Adherencia estricta a la medicación para evitar reingreso hospitalario');
+        }
+        if (/low.?intensity|baja.?intensidad/i.test(lower)) {
+            items.push('Rehabilitación física de baja intensidad bajo supervisión especializada');
+        }
+        const monthsM = text.match(/(\d+)\s*months?/i);
+        const months = monthsM ? monthsM[1] : '3';
+        const eco = /echocardiograph|ecocardiograf/i.test(lower) ? ' con ecocardiografía de control' : '';
+        items.push(`Revisión clínica programada en ${months} meses${eco}`);
+        return items.join('. ') + '.';
+    }
+
+    // ─────────────────────────────────────────────────────────
     // EXTRACCIÓN DE RECOMENDACIONES
     // ─────────────────────────────────────────────────────────
-    function _extractRecommendations(text, isEs) {
-        return _firstMatch(text, [
+    function _extractRecommendations(text, isEs, docIsEn) {
+        // ── 1. Intentar extraer lista numerada de la sección ─
+        const lines = text.split('\n');
+        let inRecSection = false;
+        const numberedItems = [];
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (/(?:action\s*plan|recommendations?|recomendaciones?|plan\s*de\s*(?:acci[oó]n|tratamiento))/i.test(trimmed)) {
+                inRecSection = true;
+                continue;
+            }
+            if (inRecSection) {
+                if (/^\d+\.\s+\S/.test(trimmed)) {
+                    const item = trimmed.replace(/^\d+\.\s*/, '').trim();
+                    if (item.length > 8 && !_isGarbledText(item)) {
+                        numberedItems.push(docIsEn ? _translateToEs(item) : item);
+                    }
+                }
+                // Parar si encontramos otro encabezado de sección
+                if (/^(?:signed|firma|nota|note|appendix)/i.test(trimmed) && trimmed.length < 60) break;
+            }
+        }
+        if (numberedItems.length > 0) return numberedItems.join('. ') + '.';
+
+        // ── 2. Extraer línea estructurada ───────────────────
+        const raw = _firstMatch(text, [
             /(?:recomendaciones?|recomendamos|se\s*recomienda)[:\s]+([^\n]{30,300})/i,
-            /(?:recommendations?|we\s*recommend|it\s*is\s*recommended)[:\s]+([^\n]{30,300})/i,
+            /(?:recommendations?|we\s*recommend)[:\s]+([^\n]{30,300})/i,
             /(?:plan\s*de\s*tratamiento|treatment\s*plan)[:\s]+([^\n]{30,300})/i,
             /(?:pr[oó]xima\s*revisi[oó]n|follow[-\s]?up|next\s*appointment)[^\n]{0,120}/i,
             /(?:indicaciones|instrucciones|instructions)[:\s]+([^\n]{25,250})/i,
-        ]) || (isEs
-            ? 'Mantener tratamiento actual bajo supervisión especializada. Rehabilitación motora de baja intensidad. Revisión en 3 meses.'
-            : 'Continue current treatment under specialist supervision. Low-intensity motor rehabilitation. Review in 3 months.');
+        ]);
+        if (raw && !_isGarbledText(raw)) return docIsEn ? _translateToEs(raw) : raw;
+
+        // ── 3. Síntesis por palabras clave (texto corrupto) ─
+        if (docIsEn || /metronome|adherence|follow.?up|echocardiograph/i.test(text)) {
+            return _buildRecsFromKeywords(text);
+        }
+
+        return 'Mantener tratamiento actual bajo supervisión especializada. Rehabilitación motora de baja intensidad. Revisión en 3 meses.';
     }
 
     // ─────────────────────────────────────────────────────────
     // MOTOR PRINCIPAL — analyzeText
     // ─────────────────────────────────────────────────────────
-    function analyzeText(rawText, lang) {
-        const isEs  = lang !== 'en';
+    function analyzeText(rawText, _lang) {
+        // Salida SIEMPRE en español — independientemente del idioma del documento
         const clean = _cleanOcrText(rawText);
         const text  = clean;
         const lower = clean.toLowerCase();
 
-        console.log('[NVReports] Texto limpio para análisis (' + clean.length + ' chars):', clean.slice(0, 500));
+        // Detectar si el documento fuente está en inglés para aplicar traducción
+        const docIsEn = _isDocumentEnglish(text);
+
+        console.log('[NVReports] Texto limpio (' + clean.length + ' chars) | inglés:', docIsEn, '| muestra:', clean.slice(0, 300));
 
         // ── 0. Documento completamente vacío ─────────────────
-        // Solo bloqueamos si no hay absolutamente nada que analizar
         if (clean.length === 0) {
             return {
-                diagnostico_principal: isEs
-                    ? 'Documento vacío: no se extrajo ningún texto. Verifique el archivo.'
-                    : 'Empty document: no text extracted. Please verify the file.',
-                medicacion_activa:  '—', recomendaciones: '—',
+                diagnostico_principal: 'Documento vacío: no se extrajo ningún texto. Verifique el archivo.',
+                medicacion_activa: '—', recomendaciones: '—',
                 metricas: {}, alertas: [], dominios: { neuro: '', cardio: '', psico: '' },
                 estadio: '', isCritical: false, rawTextLen: 0,
             };
@@ -341,14 +661,13 @@
         // ── 1. Métricas ──────────────────────────────────────
         const metricas = _extractMetrics(text);
 
-        // ── 2. Dominios clínicos ─────────────────────────────
-        const neuroFindings = _extractNeuro(text, lower, isEs);
-        const { findings: cardioFindings, isCritical: _isCritBase } = _extractCardio(text, lower, isEs, metricas);
+        // ── 2. Dominios clínicos (siempre en español) ────────
+        const neuroFindings = _extractNeuro(text, lower, true);
+        const { findings: cardioFindings, isCritical: _isCritBase } = _extractCardio(text, lower, true, metricas);
         let isCritical = _isCritBase;
-        const psicoFindings = _extractPsico(text, isEs);
+        const psicoFindings = _extractPsico(text, true);
 
         // ── 3. Diagnóstico principal ─────────────────────────
-        // Intentar patrones estructurados primero
         let diagnosis = _firstMatch(text, [
             /(?:diagn[oó]stico\s*principal|diagn[oó]stico\s*definitivo|diagn[oó]stico)[:\s]+([^\n\.]{10,200})/i,
             /(?:primary\s*diagnosis|diagnosis|assessment|clinical\s*impression)[:\s]+([^\n\.]{10,200})/i,
@@ -356,23 +675,28 @@
             /(?:impresi[oó]n\s*cl[ií]nica|conclusiones?)[:\s]+([^\n\.]{10,160})/i,
         ]);
 
-        // Si no hay patrón estructurado, componer desde dominios
-        if (!diagnosis) {
-            const allFindings = [...neuroFindings, ...cardioFindings, ...psicoFindings];
-            if (allFindings.length > 0) {
-                diagnosis = allFindings.slice(0, 4).join(' · ');
-            }
+        // Traducir si el fragmento viene de documento inglés
+        if (diagnosis && docIsEn) diagnosis = _translateToEs(diagnosis);
+
+        // Si el diagnóstico extraído tiene palabras concatenadas (artefacto PDF), descartarlo
+        // y usar los dominios clínicos que sí se detectan correctamente en español
+        if (diagnosis && _isGarbledText(diagnosis)) {
+            console.log('[NVReports] Diagnóstico corrupto detectado — usando dominios clínicos');
+            diagnosis = null;
         }
 
-        // Modo Ernesto: si hay nombre del paciente, forzar búsqueda
-        // de Estadio 2/3 y FEVI aunque estén en formatos no estándar
+        // Si no hay patrón estructurado (o estaba corrupto), componer desde dominios (ya en español)
+        if (!diagnosis) {
+            const allFindings = [...neuroFindings, ...cardioFindings, ...psicoFindings];
+            if (allFindings.length > 0) diagnosis = allFindings.slice(0, 4).join(' · ');
+        }
+
+        // Modo Ernesto
         if (isErnesto) {
-            // Buscar "Estadio 2/3", "estadio II-III", "estadio 2-3"
             const ernestoStadio = text.match(/estadio\s*([23](?:[\/\-][23])?|II[-\/]?III)/i);
             if (ernestoStadio && diagnosis && !diagnosis.includes('Estadio')) {
                 diagnosis = diagnosis + ' · Estadio ' + ernestoStadio[1].replace('-', '/');
             }
-            // Buscar FEVI en cualquier formato: "22%", "del 22", "22 %"
             if (!metricas.fevi) {
                 const ernestoFevi = text.match(/fevi[^0-9]*(\d{1,2})\s*%?/i)
                                  || text.match(/eyecci[oó]n[^0-9]*(\d{1,2})\s*%?/i);
@@ -386,100 +710,83 @@
             diagnosis = diagnosis + ' · ' + stadio;
         }
 
-        // Fallback de keywords — red de seguridad amplia
-        // Se activa siempre, añadiendo cualquier condición no capturada por el NLP estructurado
+        // Fallback de keywords — siempre en español
         const kwFallback = [
-            // Parkinson + indicadores indirectos
-            { kw: /parkinson/i,                                         es: 'Enfermedad de Parkinson',       en: "Parkinson's Disease" },
-            { kw: /sinemet|levodopa|madopar|stalevo/i,                  es: 'Parkinson (por medicación)',     en: "Parkinson's (by medication)" },
-            // Cardio grave
-            { kw: /cardiopat[ií]a\s*isqu[eé]mica|ischemic.*heart/i,    es: 'Cardiopatía Isquémica',          en: 'Ischemic Heart Disease' },
-            { kw: /fevi\s*(?:del\s*)?\d{1,2}\s*%|fevi\s*<\s*3/i,       es: 'Cardiopatía con FEVI reducida',  en: 'Cardiomyopathy with reduced EF' },
-            { kw: /neparvis|entresto|sacubitrilo/i,                     es: 'IC con FEr (por medicación)',    en: 'HFrEF (by medication)' },
-            // Otras neurológicas
-            { kw: /alzheimer/i,                                         es: 'Enfermedad de Alzheimer',        en: "Alzheimer's Disease" },
-            { kw: /esclerosis\s*m[uú]ltiple|multiple\s*sclerosis/i,     es: 'Esclerosis Múltiple',            en: 'Multiple Sclerosis' },
-            { kw: /insuficiencia\s*cardiaca|heart\s*failure/i,          es: 'Insuficiencia Cardiaca',         en: 'Heart Failure' },
-            { kw: /temblor\s*esencial|essential\s*tremor/i,             es: 'Temblor Esencial',               en: 'Essential Tremor' },
-            { kw: /depresi[oó]n|depression/i,                           es: 'Síndrome Depresivo',             en: 'Depressive Disorder' },
+            { kw: /parkinson/i,                                         label: 'Enfermedad de Parkinson'       },
+            { kw: /sinemet|levodopa|madopar|stalevo/i,                  label: 'Parkinson (por medicación)'    },
+            { kw: /cardiopat[ií]a\s*isqu[eé]mica|ischemic.*heart/i,    label: 'Cardiopatía Isquémica'         },
+            { kw: /fevi\s*(?:del\s*)?\d{1,2}\s*%|fevi\s*<\s*3/i,       label: 'Cardiopatía con FEVI reducida' },
+            { kw: /neparvis|entresto|sacubitrilo/i,                     label: 'IC con FEr (por medicación)'   },
+            { kw: /alzheimer/i,                                         label: 'Enfermedad de Alzheimer'       },
+            { kw: /esclerosis\s*m[uú]ltiple|multiple\s*sclerosis/i,     label: 'Esclerosis Múltiple'           },
+            { kw: /insuficiencia\s*cardiaca|heart\s*failure/i,          label: 'Insuficiencia Cardiaca'        },
+            { kw: /temblor\s*esencial|essential\s*tremor/i,             label: 'Temblor Esencial'              },
+            { kw: /depresi[oó]n|depression/i,                           label: 'Síndrome Depresivo'            },
         ];
         if (!diagnosis) {
-            for (const { kw, es, en } of kwFallback) {
-                if (kw.test(lower)) { diagnosis = isEs ? es : en; break; }
+            for (const { kw, label } of kwFallback) {
+                if (kw.test(lower)) { diagnosis = label; break; }
             }
         } else {
-            // Enriquecer diagnóstico existente con hallazgos de keywords no incluidos aún
             const extraDx = [];
             if (/cardiopat[ií]a\s*isqu[eé]mica/i.test(lower) && !diagnosis.toLowerCase().includes('isqu')) {
-                extraDx.push(isEs ? 'Cardiopatía Isquémica' : 'Ischemic Heart Disease');
+                extraDx.push('Cardiopatía Isquémica');
             }
             if (/fevi\s*(?:del\s*)?\d{1,2}\s*%/i.test(lower) && !diagnosis.includes('FEVI') && metricas.fevi) {
-                extraDx.push(isEs ? `FEVI ${metricas.fevi}` : `LVEF ${metricas.fevi}`);
+                extraDx.push(`FEVI ${metricas.fevi}`);
             }
             if (extraDx.length > 0) diagnosis = diagnosis + ' · ' + extraDx.join(' · ');
         }
 
         if (!diagnosis) {
-            // Nunca devolver "texto insuficiente" si hay algo que analizar
-            diagnosis = isEs
-                ? 'Informe procesado — diagnóstico no estructurado'
-                : 'Report processed — unstructured diagnosis';
+            diagnosis = 'Informe procesado — diagnóstico no estructurado';
         }
 
         // ── 4. Medicación ────────────────────────────────────
-        const medicacion = _extractMedication(text, lower, isEs);
+        let medicacion = _extractMedication(text, lower, true);
+        // Traducir contexto de medicación si viene de documento inglés
+        if (docIsEn) medicacion = _translateToEs(medicacion);
 
-        // ── 5. Recomendaciones + Alertas de Seguridad (Banderas Rojas) ───────
-        let recomendaciones = _extractRecommendations(text, isEs);
+        // ── 5. Recomendaciones + Alertas de Seguridad ────────
+        let recomendaciones = _extractRecommendations(text, true, docIsEn);
 
-        // Nota de análisis parcial cuando el texto era muy corto
+        // Nota de análisis parcial
         if (isPartial) {
             const sectionsMissing = [];
-            if (!metricas.fevi && !metricas.fc && !metricas.ta) sectionsMissing.push(isEs ? 'Métricas vitales' : 'Vital metrics');
-            if (medicacion.includes('Sin medicación') || medicacion.includes('No medication')) sectionsMissing.push(isEs ? 'Medicación' : 'Medication');
+            if (!metricas.fevi && !metricas.fc && !metricas.ta) sectionsMissing.push('Métricas vitales');
+            if (medicacion.includes('Sin medicación')) sectionsMissing.push('Medicación');
             const partialNote = sectionsMissing.length > 0
-                ? (isEs
-                    ? `📋 Análisis parcial realizado. Se recomienda revisión manual de: ${sectionsMissing.join(', ')}.`
-                    : `📋 Partial analysis performed. Manual review recommended for: ${sectionsMissing.join(', ')}.`)
-                : (isEs ? '📋 Análisis parcial realizado. Datos rescatados del texto disponible.' : '📋 Partial analysis performed. Data rescued from available text.');
+                ? `📋 Análisis parcial realizado. Se recomienda revisión manual de: ${sectionsMissing.join(', ')}.`
+                : '📋 Análisis parcial realizado. Datos rescatados del texto disponible.';
             recomendaciones = partialNote + ' | ' + recomendaciones;
         }
 
         const alertas = [];
 
-        // BANDERA ROJA — FEVI < 30% (crítico severo)
+        // BANDERA ROJA — FEVI < 30%
         if (metricas.fevi) {
             const feviVal = parseInt(metricas.fevi);
             if (feviVal < 30) {
-                alertas.push(isEs
-                    ? `🚨 ALERTA CRÍTICA: FEVI ${metricas.fevi} — Disfunción cardiaca severa. Consulte con su especialista ANTES de iniciar cualquier ejercicio. Riesgo vital.`
-                    : `🚨 CRITICAL ALERT: LVEF ${metricas.fevi} — Severe cardiac dysfunction. Consult your specialist BEFORE any exercise. Life risk.`);
+                alertas.push(`🚨 ALERTA CRÍTICA: FEVI ${metricas.fevi} — Disfunción cardiaca severa. Consulte con su especialista ANTES de iniciar cualquier ejercicio. Riesgo vital.`);
                 isCritical = true;
             } else if (feviVal < 40) {
-                // FEVI 30–39%: alerta moderada
-                alertas.push(isEs
-                    ? `⚠ Alerta: Condición cardiovascular detectada (FEVI ${metricas.fevi}). Consulte con su especialista antes de iniciar ejercicios de alta intensidad.`
-                    : `⚠ Alert: Cardiovascular condition detected (LVEF ${metricas.fevi}). Consult your specialist before high-intensity exercise.`);
+                alertas.push(`⚠ Alerta: Condición cardiovascular detectada (FEVI ${metricas.fevi}). Consulte con su especialista antes de iniciar ejercicios de alta intensidad.`);
                 isCritical = true;
             }
         }
 
-        // BANDERA ROJA — FC > 100 lpm (taquicardia)
+        // BANDERA ROJA — FC > 100 lpm
         if (metricas.fc) {
             const fcVal = parseInt(metricas.fc);
             if (fcVal > 100) {
-                alertas.push(isEs
-                    ? `⚠ Alerta: Frecuencia cardiaca elevada (${metricas.fc}). Evite ejercicios de alta intensidad. Consulte con su especialista.`
-                    : `⚠ Alert: Elevated heart rate (${metricas.fc}). Avoid high-intensity exercise. Consult your specialist.`);
+                alertas.push(`⚠ Alerta: Frecuencia cardiaca elevada (${metricas.fc}). Evite ejercicios de alta intensidad. Consulte con su especialista.`);
                 isCritical = true;
             }
         }
 
-        // BANDERA ROJA — IAM detectado en texto
+        // BANDERA ROJA — IAM
         if (/\biam\b|infarto\s*(?:agudo\s*de\s*)?miocardio|myocardial\s*infarction/i.test(text) && !alertas.some(a => a.includes('IAM'))) {
-            alertas.push(isEs
-                ? `⚠ Alerta: Antecedente de infarto de miocardio detectado. Toda actividad física debe ser supervisada por cardiología.`
-                : `⚠ Alert: History of myocardial infarction detected. All physical activity must be supervised by cardiology.`);
+            alertas.push(`⚠ Alerta: Antecedente de infarto de miocardio detectado. Toda actividad física debe ser supervisada por cardiología.`);
         }
 
         if (alertas.length > 0) {
@@ -487,16 +794,18 @@
         }
 
         // ── 6. Validación de salida ──────────────────────────
-        // Si diagnóstico es genérico pero hay texto real, forzar segunda búsqueda
-        const isGenericDiagnosis = diagnosis.includes('no estructurado') || diagnosis.includes('unstructured')
-            || diagnosis.includes('insuficiente') || diagnosis.includes('insufficient');
+        const isGenericDiagnosis = diagnosis.includes('no estructurado') || diagnosis.includes('insuficiente');
         if (isGenericDiagnosis && clean.length > 100) {
-            // Extraer las primeras líneas con contenido como diagnóstico fallback
             const firstLines = clean.split('\n').filter(l => l.trim().length > 15).slice(0, 3).join(' · ');
             if (firstLines.length > 20) {
-                diagnosis = firstLines.slice(0, 200);
+                diagnosis = docIsEn ? _translateToEs(firstLines.slice(0, 200)) : firstLines.slice(0, 200);
             }
         }
+
+        // ── 6b. Traducir dominios si el documento era inglés ─────
+        const domNeuro  = neuroFindings.join(', ')  || '';
+        const domCardio = cardioFindings.join(', ') || '';
+        const domPsico  = psicoFindings.join(', ')  || '';
 
         return {
             diagnostico_principal: diagnosis,
@@ -505,9 +814,9 @@
             metricas,
             alertas,
             dominios: {
-                neuro:  neuroFindings.join(', ')  || '',
-                cardio: cardioFindings.join(', ') || '',
-                psico:  psicoFindings.join(', ')  || '',
+                neuro:  docIsEn ? _translateToEs(domNeuro)  : domNeuro,
+                cardio: docIsEn ? _translateToEs(domCardio) : domCardio,
+                psico:  docIsEn ? _translateToEs(domPsico)  : domPsico,
             },
             estadio:    stadio || '',
             isCritical,

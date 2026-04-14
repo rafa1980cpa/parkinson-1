@@ -1,5 +1,5 @@
 /**
- * NeuroVida — Módulo 3: Análisis de Prosodia — Detección de Hipofonía
+ * NeuroTempo — Módulo 3: Análisis de Prosodia — Detección de Hipofonía
  * Compara RMS de amplitud vocal al inicio vs final de la grabación.
  * Si la caída supera el 30%, muestra aviso motivacional clínico.
  *

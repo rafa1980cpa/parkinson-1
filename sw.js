@@ -1,8 +1,8 @@
 'use strict';
-// NeuroVida PRO — Service Worker v2
+// NeuroTempo PRO — Service Worker v2
 // Notificaciones con acciones + caché offline (Cache-First shell)
 
-const CACHE_NAME  = 'neurovida-v1';
+const CACHE_NAME  = 'neurotempo-v1';
 const SHELL_URLS  = [
     '/',
     '/index.html',
@@ -11,6 +11,7 @@ const SHELL_URLS  = [
     '/manifest.json',
     '/logoapp.png',
     '/modules/nv-firebase.js',
+    '/modules/nv-i18n.js',
     '/modules/nv-reports.js',
     '/modules/nv-history.js',
     '/modules/nv-accessibility.js',
@@ -18,6 +19,8 @@ const SHELL_URLS  = [
     '/modules/nv-voice-insights.js',
     '/modules/nv-predictive.js',
     '/modules/firebase-config.js',
+    '/locales/es.json',
+    '/locales/en.json',
 ];
 
 // ── Install: precarga el shell ────────────────────────────────
