@@ -1,0 +1,19 @@
+# Dependencies (deploy tooling)
+node_modules/
+package.json
+package-lock.json
+
+# IDE & editor
+.vscode/
+.idea/
+
+# Claude Code internal
+.claude/
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
