@@ -2392,7 +2392,6 @@ async function runReportAnalysis() {
         showToast(t('hlt_no_file'), 'error');
         return;
     }
-    console.log('[NVReports] Iniciando análisis de:', file.name);
     if (!window.NVReports) {
         showToast(state.lang === 'es'
             ? 'Módulo de análisis no disponible. Recargue la página.'
@@ -2452,7 +2451,6 @@ async function runReportAnalysis() {
             analysis: analysis.recomendaciones,
             medicacion: analysis.medicacion_activa,
         };
-        console.log('[NVReports] Informe generado:', report);
 
         // 3. Zero-Storage: no se sube el archivo físico.
         //    Solo se guarda el JSON del análisis en Firestore.
@@ -3982,7 +3980,6 @@ function _initHealthDropzone() {
         if (files && files.length) handleDroppedFile(files);
     });
 
-    console.log('[NVHealth] Dropzone listo ✓ — clic y drag-drop activos');
 }
 
 // Hover visual del dropzone durante el drag
@@ -4065,7 +4062,6 @@ function handleFileUpload(input) {
 
     _renderBatchQueue();
 
-    console.log('[NVReports] Cola de archivos:', capped.map(f => f.name));
 }
 
 // ── Render de la cola de archivos pendientes ──────────────────
@@ -4770,8 +4766,7 @@ function _showNotifDeniedGuide() {
 async function _registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     try {
-        const reg = await navigator.serviceWorker.register('/sw.js');
-        console.log('[SW] Registrado ✓ scope:', reg.scope);
+        await navigator.serviceWorker.register('/sw.js');
 
         // Escuchar mensajes del SW (acciones de notificación)
         navigator.serviceWorker.addEventListener('message', e => {

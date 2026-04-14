@@ -636,7 +636,6 @@
         // Detectar si el documento fuente está en inglés para aplicar traducción
         const docIsEn = _isDocumentEnglish(text);
 
-        console.log('[NVReports] Texto limpio (' + clean.length + ' chars) | inglés:', docIsEn, '| muestra:', clean.slice(0, 300));
 
         // ── 0. Documento completamente vacío ─────────────────
         if (clean.length === 0) {
@@ -655,7 +654,6 @@
         //    forzar búsqueda intensiva de sus datos específicos ─────────
         const isErnesto = /ernesto\s*s[aá]nchez|ernesto/i.test(lower);
         if (isErnesto) {
-            console.log('[NVReports] Modo Ernesto activo — búsqueda intensiva de datos específicos');
         }
 
         // ── 1. Métricas ──────────────────────────────────────
@@ -681,7 +679,6 @@
         // Si el diagnóstico extraído tiene palabras concatenadas (artefacto PDF), descartarlo
         // y usar los dominios clínicos que sí se detectan correctamente en español
         if (diagnosis && _isGarbledText(diagnosis)) {
-            console.log('[NVReports] Diagnóstico corrupto detectado — usando dominios clínicos');
             diagnosis = null;
         }
 
@@ -934,7 +931,6 @@
                 await worker.terminate();
                 if (onProgress) onProgress(1);
                 const secondClean = (secondPass || '').trim();
-                console.log('[NVReports] Re-escaneo: ' + secondClean.length + ' chars');
                 return secondClean.length > firstClean.length ? secondClean : firstClean;
             } catch (e) {
                 console.warn('[NVReports] Re-escaneo con contraste fallido:', e);
@@ -966,11 +962,6 @@
             }
             console.warn('[NVReports] Extracción de texto fallida:', e);
         }
-
-        // ── DEBUG OBLIGATORIO: imprime el texto completo en consola para depuración ──
-        console.log('══════════════════════════════════════════════');
-        console.log('TEXTO EXTRAÍDO:', rawText);
-        console.log('══ FIN (' + rawText.length + ' chars) ══════════');
 
         const analysis = analyzeText(rawText, lang);
         return { rawText, analysis };
