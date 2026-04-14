@@ -2,8 +2,38 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
     <title>NeuroVida PRO | Ecosistema Parkinson</title>
+    <meta name="description" content="Ecosistema digital de salud para pacientes con Parkinson. Terapia RAS, medicación, SOS, informes médicos e IA clínica.">
+    <meta name="keywords" content="parkinson, salud, terapia, metrónomo, medicación, SOS, neurología">
+    <meta name="author" content="NeuroVida PRO">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- PWA / Instalación -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1A1A2E">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- iOS Safari -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="NeuroVida">
+    <link rel="apple-touch-icon" href="logoapp.png">
+    <link rel="apple-touch-startup-image" href="logoapp.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="logoapp.png">
+    <link rel="shortcut icon" href="logoapp.png">
+
+    <!-- Open Graph (compartir en redes / WhatsApp) -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="NeuroVida PRO">
+    <meta property="og:description" content="Salud digital de alta precisión para pacientes con Parkinson.">
+    <meta property="og:image" content="logoapp.png">
+    <meta property="og:locale" content="es_ES">
+
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -220,9 +250,6 @@
     <script src="modules/nv-predictive.js"></script>
     <!-- ── Módulo de Informes Médicos (OCR + IA + Firestore) ── -->
     <script src="modules/nv-reports.js"></script>
-    <!-- ── Musicoterapia Spotify (PKCE OAuth · Web Playback SDK) ── -->
-    <script src="modules/spotify-config.js"></script>
-    <script src="modules/nv-spotify.js"></script>
     <script>lucide.createIcons();</script>
 </body>
 </html>

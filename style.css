@@ -28,6 +28,9 @@ body {
     color: var(--text-dark);
     font-family: var(--font-main);
     min-height: 100vh;
+    min-height: 100dvh;                   /* móviles: excluye barra de navegador */
+    overscroll-behavior: none;            /* evita pull-to-refresh accidental */
+    -webkit-overflow-scrolling: touch;    /* scroll suave en iOS Safari */
 }
 
 /* Auth & Forms */
@@ -100,10 +103,12 @@ input:focus, select:focus {
 .app-container {
     width: 100%;
     min-height: 100vh;
+    min-height: 100dvh;
     margin: 0;
     padding: 0;
     padding-right: 78px;
-    padding-bottom: 1rem;
+    /* safe-area: iPhone X+ notch/pastilla inferior */
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
 
 #neuro-content {
@@ -326,8 +331,8 @@ h3 {
 
 .floating-sos {
     position: fixed;
-    bottom: 1.8rem;
-    left: 1.2rem;
+    bottom: max(1.8rem, calc(1rem + env(safe-area-inset-bottom)));
+    left: max(1.2rem, calc(0.8rem + env(safe-area-inset-left)));
     right: auto;
     width: 72px;
     height: 72px;
@@ -356,7 +361,7 @@ h3 {
 /* Right-Side Vertical Nav */
 .bottom-nav {
     position: fixed;
-    right: 0.65rem;
+    right: max(0.65rem, calc(0.4rem + env(safe-area-inset-right)));
     top: 50%;
     transform: translateY(-50%);
     width: 62px;
@@ -653,6 +658,21 @@ label {
     display: flex;
     align-items: center;
     gap: 4px;
+}
+.med-edit {
+    background: none;
+    border: none;
+    color: rgba(0, 242, 255, 0.35);
+    cursor: pointer;
+    padding: 0.4rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s, background 0.2s;
+}
+.med-edit:hover, .med-edit:active {
+    color: var(--accent-cyan);
+    background: rgba(0, 242, 255, 0.08);
 }
 .med-del {
     background: none;
@@ -986,191 +1006,73 @@ label {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   HUB DE MUSICOTERAPIA — Spotify Player Glassmorphism
+   HUB DE MUSICOTERAPIA — YouTube Player
    ══════════════════════════════════════════════════════════════ */
 
-/* Tarjeta Glassmorphism del reproductor */
-.sp-glass-card {
-    background: rgba(16, 24, 42, 0.65);
-    backdrop-filter: blur(20px) saturate(1.4);
-    -webkit-backdrop-filter: blur(20px) saturate(1.4);
-    border: 1px solid rgba(29, 185, 84, 0.18);
-    border-radius: 22px;
-    padding: 1.5rem 1.4rem;
-    margin-top: 1.2rem;
-    box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.45),
-        inset 0 1px 0 rgba(255, 255, 255, 0.06);
-    position: relative;
-    overflow: hidden;
-}
-
-/* Brillo sutil en la esquina superior izquierda */
-.sp-glass-card::before {
-    content: '';
-    position: absolute;
-    top: -60px;
-    left: -60px;
-    width: 200px;
-    height: 200px;
-    background: radial-gradient(circle, rgba(29, 185, 84, 0.07) 0%, transparent 70%);
-    pointer-events: none;
-}
-
-/* Barra de progreso — Alto Contraste (WCAG AAA) */
-.sp-progress-track {
-    width: 100%;
-    height: 7px;
-    background: rgba(255, 255, 255, 0.09);
-    border-radius: 4px;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.sp-progress-fill {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, #1DB954 0%, #00F2FF 100%);
-    border-radius: 4px;
-    transition: width 0.5s linear;
-    box-shadow: 0 0 8px rgba(29, 185, 84, 0.6);
-}
-
-/* Botones magnéticos — diseñados para usuarios con temblor
-   Área táctil mínima 60×60 px (supera WCAG 2.5.5 AAA)
-   El pseudo-elemento ::before extiende el hitbox sin alterar la visual */
-.sp-btn-magnetic {
-    position: relative;
+/* Botones de búsqueda de playlists terapéuticas
+   Área táctil mínima 60px — accesible para usuarios con temblor */
+.yt-search-btn {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    transition:
-        transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
-        box-shadow 0.2s ease,
-        background 0.2s ease;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-}
-
-/* Hitbox extendido invisible — extra 14 px en cada dirección */
-.sp-btn-magnetic::before {
-    content: '';
-    position: absolute;
-    inset: -14px;
-    border-radius: 50%;
-}
-
-/* Animación de "atracción" en hover — da sensación magnética */
-.sp-btn-magnetic:hover {
-    transform: scale(1.12);
-}
-
-/* Presión: se comprime con rebote al soltar */
-.sp-btn-magnetic:active {
-    transform: scale(0.86);
-    transition: transform 0.08s ease;
-}
-
-/* Play/Pause — botón principal grande */
-.sp-btn-primary {
-    width: 68px;
-    height: 68px;
-    background: radial-gradient(circle at 40% 35%, #22c55e, #1DB954, #15803d);
-    color: #fff;
-    box-shadow:
-        0 0 28px rgba(29, 185, 84, 0.55),
-        0 6px 18px rgba(0, 0, 0, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-}
-
-.sp-btn-primary:hover {
-    box-shadow:
-        0 0 42px rgba(29, 185, 84, 0.8),
-        0 8px 24px rgba(0, 0, 0, 0.45),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-}
-
-/* Prev / Next — botones secundarios */
-.sp-btn-secondary {
-    width: 54px;
-    height: 54px;
-    background: rgba(255, 255, 255, 0.07);
-    color: rgba(241, 245, 249, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.sp-btn-secondary:hover {
-    background: rgba(29, 185, 84, 0.12);
-    border-color: rgba(29, 185, 84, 0.3);
-    color: #1DB954;
-    box-shadow: 0 0 18px rgba(29, 185, 84, 0.25);
-}
-
-/* Botones de playlist terapéutica */
-.sp-playlist-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-    width: 100%;
-    padding: 0.75rem 1rem;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    gap: 0.2rem;
+    padding: 0.75rem 0.5rem;
+    background: rgba(255, 0, 0, 0.06);
+    border: 1px solid rgba(255, 80, 80, 0.2);
     border-radius: 14px;
     color: var(--text-dark);
     cursor: pointer;
-    text-align: left;
     font-family: var(--font-main);
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.3;
     transition:
         background 0.2s ease,
         border-color 0.2s ease,
         transform 0.15s ease,
         box-shadow 0.2s ease;
-    -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
-    min-height: 52px; /* Accesibilidad táctil */
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    min-height: 62px;
 }
 
-.sp-playlist-btn:hover,
-.sp-playlist-btn:focus {
-    background: rgba(29, 185, 84, 0.1);
-    border-color: rgba(29, 185, 84, 0.35);
-    transform: translateX(4px);
-    box-shadow: 0 0 16px rgba(29, 185, 84, 0.15);
+.yt-search-btn small {
+    font-size: 0.67rem;
+    font-weight: 400;
+    color: rgba(148, 163, 184, 0.6);
+}
+
+.yt-search-btn:hover,
+.yt-search-btn:focus {
+    background: rgba(255, 0, 0, 0.13);
+    border-color: rgba(255, 60, 60, 0.45);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(255, 0, 0, 0.12);
     outline: none;
 }
 
-.sp-playlist-btn:active {
-    transform: translateX(2px) scale(0.98);
+.yt-search-btn:active {
+    transform: translateY(0) scale(0.97);
 }
 
-/* Animación del pulso de ducking */
-@keyframes sp-duck-pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50%       { opacity: 0.45; transform: scale(0.75); }
+/* Botón Play — texto en escritorio, solo icono en móvil */
+.yt-play-btn  { padding: 0 1.1rem; }
+.yt-play-icon { display: none; font-size: 1.15rem; }
+.yt-play-text { display: inline; }
+
+@media (max-width: 480px) {
+    .yt-play-btn  { padding: 0; width: 48px; justify-content: center; }
+    .yt-play-text { display: none; }
+    .yt-play-icon { display: inline; }
 }
 
-/* Modo Alto Contraste — activa con clase en <body> o <html> */
 @media (prefers-contrast: more) {
-    .sp-glass-card {
-        background: rgba(0, 0, 0, 0.9);
-        border-color: #1DB954;
+    .yt-search-btn {
+        border-color: #ff4444;
         border-width: 2px;
-    }
-    .sp-progress-track {
-        height: 10px;
-        border-color: rgba(255, 255, 255, 0.3);
-    }
-    .sp-progress-fill {
-        background: #1DB954;
-        box-shadow: 0 0 12px #1DB954;
-    }
-    .sp-btn-primary {
-        box-shadow: 0 0 0 3px #1DB954, 0 0 0 6px rgba(29, 185, 84, 0.3);
     }
 }
 
@@ -1199,6 +1101,15 @@ label {
 .nv-report-card.nv-report-critical:hover {
     border-color: rgba(239,68,68,0.5);
     box-shadow: 0 6px 24px rgba(239,68,68,0.12);
+}
+.nv-report-card.nv-report-red-flag {
+    border-color: rgba(239,68,68,0.55);
+    background: linear-gradient(145deg, rgba(50,10,10,0.9), rgba(25,8,8,0.97));
+    box-shadow: 0 0 0 1px rgba(239,68,68,0.2), 0 4px 20px rgba(239,68,68,0.15);
+}
+.nv-report-card.nv-report-red-flag:hover {
+    border-color: rgba(239,68,68,0.75);
+    box-shadow: 0 0 0 2px rgba(239,68,68,0.3), 0 8px 28px rgba(239,68,68,0.2);
 }
 
 /* Sección con borde izquierdo de color */
@@ -1241,6 +1152,59 @@ label {
 }
 .nv-dropzone:active {
     transform: scale(0.99);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   BATCH QUEUE — COLA DE ARCHIVOS MÚLTIPLES
+   ══════════════════════════════════════════════════════════════ */
+
+@keyframes nvAlarmPulse {
+    from { box-shadow: 0 -4px 20px rgba(239, 68, 68, 0.35); }
+    to   { box-shadow: 0 -4px 50px rgba(239, 68, 68, 0.85); }
+}
+@keyframes nvAlarmBlink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.6; }
+}
+
+@keyframes nvBatchFadeOut {
+    from { opacity: 1; transform: translateX(0);  max-height: 70px; margin-bottom: 0.35rem; }
+    to   { opacity: 0; transform: translateX(10px); max-height: 0;   margin-bottom: 0;      padding-top: 0; padding-bottom: 0; }
+}
+.nv-batch-removing {
+    animation: nvBatchFadeOut 0.22s ease-out forwards;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.nv-batch-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 0.5rem 0.55rem 0.85rem;
+    border-radius: 10px;
+    background: rgba(22, 33, 62, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    margin-bottom: 0.35rem;
+    transition: border-color 0.18s;
+}
+.nv-batch-item:hover {
+    border-color: rgba(255, 255, 255, 0.13);
+}
+
+.nv-batch-bar {
+    height: 3px;
+    border-radius: 99px;
+    background: rgba(0, 242, 255, 0.1);
+    margin: -0.25rem 0.85rem 0.45rem;
+    overflow: hidden;
+}
+
+.nv-batch-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--accent-cyan), var(--primary-green));
+    transition: width 0.3s ease;
 }
 
 /* ══════════════════════════════════════════════════════════════

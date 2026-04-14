@@ -31,12 +31,18 @@ function nvDecrypt(encoded) {
 
 function nvSaveUser(u) {
     localStorage.setItem('nv_user', JSON.stringify({
-        n:  nvEncrypt(u.name  || ''),
-        e:  nvEncrypt(u.email || ''),
-        r:  'patient',
-        a:  u.age   || '',
-        c:  nvEncrypt(u.country          || ''),
-        ec: nvEncrypt(u.emergencyContact || '')
+        n:   nvEncrypt(u.name  || ''),
+        e:   nvEncrypt(u.email || ''),
+        r:   'patient',
+        a:   u.age || '',
+        c:   nvEncrypt(u.country || ''),
+        ec:  nvEncrypt(u.emergencyContact || ''),
+        ec1n: nvEncrypt((u.ec1 && u.ec1.name)  || ''),
+        ec1p: nvEncrypt((u.ec1 && u.ec1.phone) || ''),
+        ec2n: nvEncrypt((u.ec2 && u.ec2.name)  || ''),
+        ec2p: nvEncrypt((u.ec2 && u.ec2.phone) || ''),
+        ec3n: nvEncrypt((u.ec3 && u.ec3.name)  || ''),
+        ec3p: nvEncrypt((u.ec3 && u.ec3.phone) || ''),
     }));
 }
 
@@ -52,7 +58,10 @@ function nvLoadUser() {
             role:             'patient',
             age:              p.a || '',
             country:          nvDecrypt(p.c  || ''),
-            emergencyContact: nvDecrypt(p.ec || '')
+            emergencyContact: nvDecrypt(p.ec || ''),
+            ec1: { name: nvDecrypt(p.ec1n || ''), phone: nvDecrypt(p.ec1p || '') },
+            ec2: { name: nvDecrypt(p.ec2n || ''), phone: nvDecrypt(p.ec2p || '') },
+            ec3: { name: nvDecrypt(p.ec3n || ''), phone: nvDecrypt(p.ec3p || '') },
         };
     } catch (e) { return null; }
 }
@@ -112,21 +121,20 @@ const translations = {
         ras_sub: 'Sincronización neuromotora mediante metrónomo auditivo — mejora la marcha y el ritmo',
         ras_start: 'Iniciar Metrónomo', ras_stop: 'Detener',
         ras_bpm: 'BPM',
-        // Spotify / Hub de Musicoterapia
-        sp_hub_title: 'Hub de Musicoterapia',
-        sp_hub_sub: 'Música terapéutica sincronizada con el metrónomo RAS',
-        sp_connect: 'Conectar con Spotify',
-        sp_disconnect: 'Desconectar',
-        sp_status_off: '○ No conectado',
-        sp_premium_note: 'Se requiere cuenta Spotify Premium',
-        sp_playlists: 'Playlists Terapéuticas · 100–120 BPM',
-        sp_duck_notice: '🎵 Música reducida al 25% — metrónomo activo como "Master"',
-        sp_track_idle: 'Selecciona una playlist terapéutica',
-        sp_consent_title: 'Conexión a Spotify · Aviso de Privacidad',
-        sp_consent_body: 'Al conectar tu cuenta de Spotify, NeuroVida accede a: tu perfil de usuario, estado de reproducción y control de playback.\n\nTus datos de uso de Spotify NO se almacenan en nuestros servidores. El token de acceso se cifra localmente en tu dispositivo.\n\nCumplimos con el Reglamento General de Protección de Datos (RGPD — UE) y los principios de privacidad HIPAA (EE.UU.).\n\nPuedes revocar el acceso en cualquier momento desde tu cuenta de Spotify → Aplicaciones conectadas.',
-        sp_consent_accept: 'ACEPTAR Y CONECTAR',
-        sp_consent_cancel: 'CANCELAR',
-        // Health
+        // Musicoterapia YouTube
+        yt_hub_title: 'Musicoterapia RAS',
+        yt_hub_sub: 'Playlists de ritmo para terapia de marcha · Sin registro',
+        yt_search_label: 'Busca una playlist en YouTube:',
+        yt_embed_label: 'O reproduce directamente aquí:',
+        yt_url_ph: 'Pega la URL de YouTube, Spotify, Vimeo, SoundCloud...',
+        yt_name_ph: 'Nombre para recordarla (opcional)',
+        yt_load_btn: 'Reproducir',
+        yt_stop_btn: '⏹ Detener',
+        yt_hint: 'Compatible con YouTube · Spotify · Vimeo · SoundCloud · Dailymotion · Twitch',
+        yt_tip: 'Ajusta el volumen manualmente cuando uses el metrónomo RAS.',
+        yt_saved: 'Guardadas',
+        yt_no_saved: 'Aún no hay playlists guardadas',
+        yt_clear_all: 'Limpiar todo',
         hlt_title: 'Subir Informe Médico',
         hlt_sub: 'Sincronice sus informes PDF para valoración con Inteligencia Artificial',
         hlt_click: 'Haga clic para subir PDF',
@@ -149,6 +157,16 @@ const translations = {
         sec_hold: 'Mantén pulsado 2 seg para activar SOS',
         sec_simulate: 'SIMULAR EMERGENCIA',
         sec_logout: 'CERRAR SESIÓN',
+        sec_contacts_title: 'Contactos de Emergencia',
+        sec_contacts_sub: 'Se llamarán en orden antes de activar los servicios oficiales',
+        sec_contact_name: 'Nombre',
+        sec_contact_phone: 'Teléfono',
+        sec_contact_ph_name: 'Ej: Familiar / Cuidador',
+        sec_contact_ph_phone: 'Ej: +34 600 000 000',
+        sec_contacts_save: 'Guardar contactos',
+        sec_contacts_saved: 'Contactos guardados.',
+        sec_official_title: 'Número de emergencias oficial',
+        sec_official_sub: 'Se activa si no se localiza ningún contacto personal',
         // Misc
         close: 'Cerrar', finish: 'Finalizar',
         ana_done: 'Análisis completado. Su valoración médica ha sido actualizada.',
@@ -245,20 +263,20 @@ const translations = {
         ras_sub: 'Neuromotor synchronization via auditory metronome — improves gait and rhythm',
         ras_start: 'Start Metronome', ras_stop: 'Stop',
         ras_bpm: 'BPM',
-        // Spotify / Musicotherapy Hub
-        sp_hub_title: 'Musicotherapy Hub',
-        sp_hub_sub: 'Therapeutic music synchronized with the RAS metronome',
-        sp_connect: 'Connect with Spotify',
-        sp_disconnect: 'Disconnect',
-        sp_status_off: '○ Not connected',
-        sp_premium_note: 'Spotify Premium account required',
-        sp_playlists: 'Therapy Playlists · 100–120 BPM',
-        sp_duck_notice: '🎵 Music ducked to 25% — metronome active as "Master"',
-        sp_track_idle: 'Select a therapy playlist',
-        sp_consent_title: 'Spotify Connection · Privacy Notice',
-        sp_consent_body: 'By connecting your Spotify account, NeuroVida accesses: your user profile, playback state, and playback control.\n\nYour Spotify usage data is NOT stored on our servers. The access token is encrypted locally on your device.\n\nWe comply with the General Data Protection Regulation (GDPR — EU), HIPAA privacy principles (USA), and CCPA (California).\n\nYou can revoke access at any time from your Spotify account → Apps.',
-        sp_consent_accept: 'ACCEPT & CONNECT',
-        sp_consent_cancel: 'CANCEL',
+        // Musicotherapy YouTube
+        yt_hub_title: 'RAS Musicotherapy',
+        yt_hub_sub: 'Rhythm playlists for gait therapy · No login required',
+        yt_search_label: 'Search a playlist on YouTube:',
+        yt_embed_label: 'Or play directly here:',
+        yt_url_ph: 'Paste a YouTube, Spotify, Vimeo, SoundCloud URL...',
+        yt_load_btn: 'Play',
+        yt_stop_btn: '⏹ Stop',
+        yt_hint: 'Supports YouTube · Spotify · Vimeo · SoundCloud · Dailymotion · Twitch',
+        yt_tip: 'Adjust volume manually when using the RAS metronome.',
+        yt_saved: 'Saved',
+        yt_no_saved: 'No saved playlists yet',
+        yt_clear_all: 'Clear all',
+        yt_name_ph: 'Label to remember it (optional)',
         // Health
         hlt_title: 'Upload Medical Report',
         hlt_sub: 'Sync your PDF reports for AI-powered assessment',
@@ -282,6 +300,16 @@ const translations = {
         sec_hold: 'Hold 2 sec to activate SOS',
         sec_simulate: 'SIMULATE EMERGENCY',
         sec_logout: 'SIGN OUT',
+        sec_contacts_title: 'Emergency Contacts',
+        sec_contacts_sub: 'Called in order before activating official emergency services',
+        sec_contact_name: 'Name',
+        sec_contact_phone: 'Phone',
+        sec_contact_ph_name: 'E.g: Family / Caregiver',
+        sec_contact_ph_phone: 'E.g: +1 555 000 0000',
+        sec_contacts_save: 'Save contacts',
+        sec_contacts_saved: 'Contacts saved.',
+        sec_official_title: 'Official emergency number',
+        sec_official_sub: 'Activated if no personal contact can be reached',
         // Misc
         close: 'Close', finish: 'Finish',
         ana_done: 'Analysis complete. Your medical assessment has been updated.',
@@ -389,7 +417,7 @@ const state = {
     patientStatus: 'ON',
     medications: [
         { name: 'Levodopa/Carbidopa', time: '08:00', taken: true },
-        { name: 'Ropinirol',          time: '13:00', taken: false },
+        { name: 'Ropinirol', time: '13:00', taken: false },
         { name: 'Levodopa/Carbidopa', time: '20:00', taken: false }
     ],
     isRecording: false,
@@ -397,9 +425,11 @@ const state = {
     gpsMetadata: { lat: '40.4168° N', lon: '3.7038° W' },
     auditLog: [],
     reports: [
-        { id: 1, date: '2026-03-15', source: 'Hospital Ruber',
-          diagnosis: 'Estabilidad en Parkinson grado 2',
-          analysis: 'Se observa buena respuesta al tratamiento actual. Mantener ejercicio motriz.' }
+        {
+            id: 1, date: '2026-03-15', source: 'Hospital Ruber',
+            diagnosis: 'Estabilidad en Parkinson grado 2',
+            analysis: 'Se observa buena respuesta al tratamiento actual. Mantener ejercicio motriz.'
+        }
     ],
     isAnalyzingReport: false,
     metronomeBPM: 112,
@@ -411,8 +441,8 @@ const state = {
     evolutionSyncing: false,
     evolutionFilter: 'all',
     _pendingFile: null,
-    reportsSyncing: false,
-    spotifyVolume: parseFloat(localStorage.getItem('nv_spot_vol') || '0.8')
+    _pendingFiles: [],    // cola multi-upload
+    reportsSyncing: false
 };
 
 // ============================================================
@@ -423,19 +453,19 @@ const state = {
 function _fbErrorMsg(code) {
     const isEs = (typeof state !== 'undefined' ? state.lang : 'es') === 'es';
     const map = {
-        'auth/user-not-found':           isEs ? 'No existe cuenta con ese correo.'              : 'No account found for that email.',
-        'auth/wrong-password':           isEs ? 'Contraseña incorrecta.'                         : 'Incorrect password.',
-        'auth/invalid-credential':       isEs ? 'Correo o contraseña incorrectos.'               : 'Incorrect email or password.',
-        'auth/email-already-in-use':     isEs ? 'Ese correo ya está registrado.'                 : 'That email is already registered.',
-        'auth/weak-password':            isEs ? 'La contraseña debe tener 6+ caracteres.'        : 'Password must be at least 6 characters.',
-        'auth/invalid-email':            isEs ? 'Correo electrónico inválido.'                   : 'Invalid email address.',
-        'auth/too-many-requests':        isEs ? 'Demasiados intentos. Espere un momento.'        : 'Too many attempts. Please wait.',
-        'auth/network-request-failed':   isEs ? 'Sin conexión. Compruebe su red.'               : 'No connection. Check your network.',
-        'auth/operation-not-allowed':    isEs ? 'Inicio de sesión por email no activado. Active Email/Password en Firebase Console → Authentication → Sign-in method.' : 'Email sign-in is disabled. Enable Email/Password in Firebase Console → Authentication → Sign-in method.',
-        'auth/configuration-not-found':  isEs ? 'Proyecto Firebase no configurado correctamente.' : 'Firebase project not configured correctly.',
-        'auth/api-key-not-valid':        isEs ? 'API Key de Firebase inválida. Revise firebase-config.js.' : 'Invalid Firebase API Key. Check firebase-config.js.',
-        'auth/invalid-api-key':          isEs ? 'API Key de Firebase inválida. Revise firebase-config.js.' : 'Invalid Firebase API Key. Check firebase-config.js.',
-        'firebase_unavailable':          isEs ? 'Modo sin conexión — datos guardados localmente.' : 'Offline mode — data saved locally.',
+        'auth/user-not-found': isEs ? 'No existe cuenta con ese correo.' : 'No account found for that email.',
+        'auth/wrong-password': isEs ? 'Contraseña incorrecta.' : 'Incorrect password.',
+        'auth/invalid-credential': isEs ? 'Correo o contraseña incorrectos.' : 'Incorrect email or password.',
+        'auth/email-already-in-use': isEs ? 'Ese correo ya está registrado.' : 'That email is already registered.',
+        'auth/weak-password': isEs ? 'La contraseña debe tener 6+ caracteres.' : 'Password must be at least 6 characters.',
+        'auth/invalid-email': isEs ? 'Correo electrónico inválido.' : 'Invalid email address.',
+        'auth/too-many-requests': isEs ? 'Demasiados intentos. Espere un momento.' : 'Too many attempts. Please wait.',
+        'auth/network-request-failed': isEs ? 'Sin conexión. Compruebe su red.' : 'No connection. Check your network.',
+        'auth/operation-not-allowed': isEs ? 'Inicio de sesión por email no activado. Active Email/Password en Firebase Console → Authentication → Sign-in method.' : 'Email sign-in is disabled. Enable Email/Password in Firebase Console → Authentication → Sign-in method.',
+        'auth/configuration-not-found': isEs ? 'Proyecto Firebase no configurado correctamente.' : 'Firebase project not configured correctly.',
+        'auth/api-key-not-valid': isEs ? 'API Key de Firebase inválida. Revise firebase-config.js.' : 'Invalid Firebase API Key. Check firebase-config.js.',
+        'auth/invalid-api-key': isEs ? 'API Key de Firebase inválida. Revise firebase-config.js.' : 'Invalid Firebase API Key. Check firebase-config.js.',
+        'firebase_unavailable': isEs ? 'Modo sin conexión — datos guardados localmente.' : 'Offline mode — data saved locally.',
     };
     const msg = map[code];
     if (msg) return msg;
@@ -447,9 +477,9 @@ function _fbErrorMsg(code) {
 function showAuthMode(mode) {
     // 'profile-setup' usa id 'profile-setup-box' (sin -form)
     const idMap = { 'profile-setup': 'profile-setup-box' };
-    ['login','register','recover','profile-setup'].forEach(m => {
-        const id  = idMap[m] ? idMap[m] : `${m}-form-box`;
-        const el  = document.getElementById(id);
+    ['login', 'register', 'recover', 'profile-setup'].forEach(m => {
+        const id = idMap[m] ? idMap[m] : `${m}-form-box`;
+        const el = document.getElementById(id);
         if (el) el.style.display = m === mode ? 'block' : 'none';
     });
     const authFlow = document.getElementById('auth-flow');
@@ -459,16 +489,16 @@ function showAuthMode(mode) {
 
 function showPrivacyModal() {
     const overlay = document.getElementById('privacy-overlay');
-    const modal   = document.getElementById('privacy-modal');
+    const modal = document.getElementById('privacy-modal');
     if (overlay) overlay.style.display = 'block';
-    if (modal)   modal.style.display   = 'block';
+    if (modal) modal.style.display = 'block';
 }
 
 function hidePrivacyModal() {
     const overlay = document.getElementById('privacy-overlay');
-    const modal   = document.getElementById('privacy-modal');
+    const modal = document.getElementById('privacy-modal');
     if (overlay) overlay.style.display = 'none';
-    if (modal)   modal.style.display   = 'none';
+    if (modal) modal.style.display = 'none';
 }
 
 function acceptPrivacyAndRegister() {
@@ -478,7 +508,7 @@ function acceptPrivacyAndRegister() {
 
 async function handleLogin() {
     const email = document.getElementById('login-email').value.trim();
-    const pass  = document.getElementById('login-pass').value;
+    const pass = document.getElementById('login-pass').value;
     if (!email || !pass) { showToast(t('fill_fields'), 'error'); return; }
 
     const btn = document.querySelector('#login-form-box .btn-primary');
@@ -487,7 +517,7 @@ async function handleLogin() {
     try {
         if (window.NVFirebase && NVFirebase.isReady()) {
             // ── Firebase Auth ──────────────────────────────────
-            const fbUser  = await NVFirebase.login(email, pass);
+            const fbUser = await NVFirebase.login(email, pass);
             const profile = await NVFirebase.loadProfile(fbUser.uid);
             const userData = profile
                 ? { ...profile, uid: fbUser.uid, email: fbUser.email }
@@ -514,9 +544,9 @@ async function handleLogin() {
 }
 
 async function handleRegister() {
-    const name  = document.getElementById('reg-name').value.trim();
+    const name = document.getElementById('reg-name').value.trim();
     const email = document.getElementById('reg-email').value.trim();
-    const pass  = document.getElementById('reg-pass').value;
+    const pass = document.getElementById('reg-pass').value;
     if (!name || !email || !pass) { showToast(t('all_fields_req'), 'error'); return; }
 
     const btn = document.querySelector('#register-form-box .btn-primary');
@@ -554,15 +584,15 @@ function checkProfileComplete() {
 }
 
 function handleSaveProfile() {
-    const age       = document.getElementById('prof-age').value;
-    const country   = document.getElementById('prof-country').value.trim();
+    const age = document.getElementById('prof-age').value;
+    const country = document.getElementById('prof-country').value.trim();
     const emergency = document.getElementById('prof-emergency').value.trim();
     if (!age || !country || !emergency) { showToast(t('all_fields_req'), 'error'); return; }
 
-    state.user.age              = age;
-    state.user.country          = country;
+    state.user.age = age;
+    state.user.country = country;
     state.user.emergencyContact = emergency;
-    state.user.lang             = state.lang;
+    state.user.lang = state.lang;
     nvSaveUser(state.user);
 
     // Sincronizar perfil completo con Firestore (async, no bloqueante)
@@ -616,7 +646,7 @@ function initApp() {
         return;
     }
     ['auth-flow'].forEach(id => document.getElementById(id).style.display = 'none');
-    ['main-header','neuro-content'].forEach(id => document.getElementById(id).style.display = 'block');
+    ['main-header', 'neuro-content'].forEach(id => document.getElementById(id).style.display = 'block');
     document.getElementById('floating-sos-btn').style.display = 'flex';
     document.querySelector('nav.bottom-nav').style.display = 'flex';
 
@@ -627,7 +657,38 @@ function initApp() {
 
     nvLoadMeds();
     checkDailyMedReset();
-    if (Notification.permission === 'granted') startMedReminders();
+
+    // Auto-restart del motor si el permiso sigue activo (persistencia tras refresco)
+    if (Notification.permission === 'granted') {
+        startMedReminders();
+    } else if (localStorage.getItem('nv_reminders_active')) {
+        // El permiso fue revocado externamente — limpiar el flag
+        localStorage.removeItem('nv_reminders_active');
+    }
+
+    // Registro del Service Worker (habilita notificaciones con acciones)
+    _registerServiceWorker();
+
+    // Warning cuando la pestaña queda en segundo plano con alarmas activas
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && _notifInterval && !_bgWarnShown) {
+            // Marcar para mostrar cuando el usuario vuelva
+            sessionStorage.setItem('nv_bg_warn_pending', '1');
+        }
+        if (!document.hidden && sessionStorage.getItem('nv_bg_warn_pending')) {
+            sessionStorage.removeItem('nv_bg_warn_pending');
+            if (!_bgWarnShown) {
+                _bgWarnShown = true;
+                const isEs = state.lang === 'es';
+                showToast(
+                    isEs
+                        ? '📌 Para alarmas fiables, mantén esta pestaña abierta o fíjala en el navegador.'
+                        : '📌 For reliable alarms, keep this tab open or pin it in your browser.',
+                    'info'
+                );
+            }
+        }
+    });
 
     render();
 
@@ -636,11 +697,11 @@ function initApp() {
 
 function updateNav() {
     const navItems = {
-        therapy:  { icon: 'activity',      label: t('nav_therapy') },
-        ras:      { icon: 'music',          label: t('nav_ras') },
-        health:   { icon: 'clipboard-list', label: t('nav_health') },
-        security: { icon: 'shield',         label: t('nav_security') },
-        profile:  { icon: 'user-circle',   label: t('nav_profile') }
+        therapy: { icon: 'activity', label: t('nav_therapy') },
+        ras: { icon: 'music', label: t('nav_ras') },
+        health: { icon: 'clipboard-list', label: t('nav_health') },
+        security: { icon: 'shield', label: t('nav_security') },
+        profile: { icon: 'user-circle', label: t('nav_profile') }
     };
     const nav = document.querySelector('nav.bottom-nav');
     if (!nav) return;
@@ -656,10 +717,10 @@ function updateNav() {
 
 function getContextChip(view) {
     const chips = {
-        therapy:  { icon: 'user',           es: 'Paciente: Diagnóstico motor',   en: 'Patient: Motor diagnosis' },
-        ras:      { icon: 'user',           es: 'Paciente: Terapia de ritmo',     en: 'Patient: Rhythm therapy' },
-        health:   { icon: 'file-text',      es: 'Informes médicos',               en: 'Medical reports' },
-        security: { icon: 'alert-triangle', es: 'Paciente: SOS y emergencias',    en: 'Patient: SOS & emergencies' }
+        therapy: { icon: 'user', es: 'Paciente: Diagnóstico motor', en: 'Patient: Motor diagnosis' },
+        ras: { icon: 'user', es: 'Paciente: Terapia de ritmo', en: 'Patient: Rhythm therapy' },
+        health: { icon: 'file-text', es: 'Informes médicos', en: 'Medical reports' },
+        security: { icon: 'alert-triangle', es: 'Paciente: SOS y emergencias', en: 'Patient: SOS & emergencies' }
     };
     const cfg = chips[view] || chips.therapy;
     return `<div class="view-context-chip"><i data-lucide="${cfg.icon}"></i>${cfg[state.lang] || cfg.es}</div>`;
@@ -730,10 +791,10 @@ async function _syncEvolutionFromFirestore() {
         const remote = await NVFirebase.getEvaluations(uid);
         if (remote.length) {
             // Merge: datos remotos prevalecen sobre locales; se conservan entradas locales sin ID remoto
-            const local     = window.NVHistory ? NVHistory.getAll() : [];
+            const local = window.NVHistory ? NVHistory.getAll() : [];
             const remoteIds = new Set(remote.map(e => e.id));
             const localOnly = local.filter(e => !remoteIds.has(e.id));
-            const merged    = [...remote, ...localOnly].sort((a, b) => b.ts - a.ts);
+            const merged = [...remote, ...localOnly].sort((a, b) => b.ts - a.ts);
 
             localStorage.setItem('nv_session_history', JSON.stringify(merged.slice(0, 300)));
             state.sessionHistory = merged;
@@ -765,10 +826,36 @@ async function _syncMedicalReportsFromFirestore() {
 }
 
 // ── Renderizado premium de valoraciones ─────────────────────
+// ── Restricción cardiovascular — bloquea ejercicios de alta intensidad ──
+function _getCardioRestriction() {
+    const reports = state.medicalReports || [];
+    const isEs = state.lang === 'es';
+    for (const r of reports) {
+        const mx = r.metricas || {};
+        const feviNum = mx.fevi ? parseInt(mx.fevi) : null;
+        const fcNum = mx.fc ? parseInt(mx.fc) : null;
+        if ((feviNum !== null && feviNum < 30) || (fcNum !== null && fcNum > 100)) {
+            const parts = [];
+            if (feviNum !== null && feviNum < 30) parts.push(isEs ? `FEVI ${mx.fevi}` : `LVEF ${mx.fevi}`);
+            if (fcNum !== null && fcNum > 100) parts.push(isEs ? `FC ${mx.fc}` : `HR ${mx.fc}`);
+            return {
+                blocked: true,
+                fevi: mx.fevi || null,
+                fc: mx.fc || null,
+                patient: r.source || r.fileName || (isEs ? 'Paciente' : 'Patient'),
+                reason: isEs
+                    ? `${parts.join(' · ')} — Disfunción cardiaca severa detectada. Ejercicios de alta intensidad bloqueados por seguridad cardiovascular.`
+                    : `${parts.join(' · ')} — Severe cardiac dysfunction detected. High-intensity exercises blocked for cardiovascular safety.`
+            };
+        }
+    }
+    return { blocked: false, reason: '' };
+}
+
 function _renderMedicalReportsList() {
     const container = document.getElementById('reports-list');
     if (!container) return;
-    const isEs   = state.lang === 'es';
+    const isEs = state.lang === 'es';
     const reports = state.medicalReports;
 
     if (reports.length === 0) {
@@ -779,23 +866,48 @@ function _renderMedicalReportsList() {
         return;
     }
 
-    container.innerHTML = reports.slice(0, 10).map(r => {
-        const diag   = r.diagnostico_principal || r.diagnosis || '—';
-        const med    = r.medicacion_activa     || r.medicacion || '';
-        const rec    = r.recomendaciones       || r.analysis   || '—';
-        const src    = r.source || r.fileName  || (isEs ? 'Informe' : 'Report');
-        const date   = r.date || '';
-        const mx     = r.metricas || {};
-        const dom    = r.dominios || {};
+    // Contador de páginas analizadas
+    const totalPages = reports.reduce((acc, r) => acc + (r.pageCount || 1), 0);
+    const counterHtml = `
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.85rem;
+                    padding:0.45rem 0.9rem;border-radius:50px;
+                    background:rgba(0,242,255,0.06);border:1px solid rgba(0,242,255,0.12);
+                    width:fit-content;">
+            <span style="font-size:1rem;">📊</span>
+            <span style="font-size:0.78rem;font-weight:700;color:rgba(0,242,255,0.75);">
+                ${isEs
+            ? `Se han analizado <b>${totalPages}</b> página(s) de este historial · <b>${reports.length}</b> informe(s)`
+            : `<b>${totalPages}</b> page(s) analyzed in this history · <b>${reports.length}</b> report(s)`}
+            </span>
+        </div>`;
+
+    const cardsHtml = reports.slice(0, 20).map(r => {
+        const diag = r.diagnostico_principal || r.diagnosis || '—';
+        const med = r.medicacion_activa || r.medicacion || '';
+        const rec = r.recomendaciones || r.analysis || '—';
+        const src = r.source || r.fileName || (isEs ? 'Informe' : 'Report');
+        const date = r.date || '';
+        const mx = r.metricas || {};
+        const dom = r.dominios || {};
         const isCrit = r.isCritical || rec.includes('⚠') || diag.toLowerCase().includes('fevi');
-        const hasAlert = rec.startsWith('⚠');
+        const hasAlert = rec.startsWith('⚠') || rec.startsWith('🚨');
+
+        // ── Bandera Roja: detectar cifras críticas en métricas ──
+        const feviNum = mx.fevi ? parseInt(mx.fevi) : null;
+        const fcNum = mx.fc ? parseInt(mx.fc) : null;
+        const isRedFlag = (feviNum !== null && feviNum < 30) || (fcNum !== null && fcNum > 100);
+        const redFlagMsg = isRedFlag
+            ? (isEs
+                ? `⚠ Alerta: Condición cardiovascular detectada${feviNum !== null && feviNum < 30 ? ` (FEVI ${mx.fevi})` : ''}${fcNum !== null && fcNum > 100 ? ` (FC ${mx.fc})` : ''}. Consulte con su especialista antes de iniciar ejercicios de alta intensidad.`
+                : `⚠ Alert: Cardiovascular condition detected${feviNum !== null && feviNum < 30 ? ` (LVEF ${mx.fevi})` : ''}${fcNum !== null && fcNum > 100 ? ` (HR ${mx.fc})` : ''}. Consult your specialist before starting high-intensity exercise.`)
+            : '';
 
         // ── Métricas pill row ──
         const metricPills = Object.entries(mx).map(([k, v]) => {
-            const labels = { ta:'TA', fc:'FC', fevi:'FEVI', pap:'PAP', cr:'Cr', hb:'Hb', glucosa:'Glu', colesterol:'Col', sato2:'SpO₂' };
-            const colors = { fevi:'#ef4444', pap:'#ef4444', ta:'#3b82f6', fc:'#3b82f6', cr:'#f59e0b', hb:'#f59e0b', glucosa:'#f59e0b', colesterol:'#f59e0b', sato2:'#10b981' };
-            const col    = colors[k] || 'rgba(148,163,184,0.6)';
-            const label  = labels[k] || k;
+            const labels = { ta: 'TA', fc: 'FC', fevi: 'FEVI', pap: 'PAP', cr: 'Cr', hb: 'Hb', glucosa: 'Glu', colesterol: 'Col', sato2: 'SpO₂' };
+            const colors = { fevi: '#ef4444', pap: '#ef4444', ta: '#3b82f6', fc: '#3b82f6', cr: '#f59e0b', hb: '#f59e0b', glucosa: '#f59e0b', colesterol: '#f59e0b', sato2: '#10b981' };
+            const col = colors[k] || 'rgba(148,163,184,0.6)';
+            const label = labels[k] || k;
             return `<span style="display:inline-flex;align-items:center;gap:0.25rem;padding:3px 9px;border-radius:50px;
                                   background:${col}14;border:1px solid ${col}30;font-size:0.72rem;font-weight:700;">
                         <span style="color:rgba(148,163,184,0.55);">${label}</span>
@@ -805,27 +917,37 @@ function _renderMedicalReportsList() {
 
         // ── Dominios detectados ──
         const domRow = [
-            dom.neuro  && `<span style="font-size:0.7rem;padding:2px 8px;border-radius:50px;background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.25);color:rgba(139,92,246,0.9);">🧠 ${dom.neuro}</span>`,
+            dom.neuro && `<span style="font-size:0.7rem;padding:2px 8px;border-radius:50px;background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.25);color:rgba(139,92,246,0.9);">🧠 ${dom.neuro}</span>`,
             dom.cardio && `<span style="font-size:0.7rem;padding:2px 8px;border-radius:50px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.22);color:rgba(239,68,68,0.85);">❤ ${dom.cardio}</span>`,
-            dom.psico  && `<span style="font-size:0.7rem;padding:2px 8px;border-radius:50px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.22);color:rgba(251,191,36,0.85);">🧩 ${dom.psico}</span>`,
+            dom.psico && `<span style="font-size:0.7rem;padding:2px 8px;border-radius:50px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.22);color:rgba(251,191,36,0.85);">🧩 ${dom.psico}</span>`,
         ].filter(Boolean).join('');
 
         // ── Separar alerta del texto de recomendaciones ──
         let alertHtml = '';
-        let recText   = rec;
+        let recText = rec;
         if (hasAlert) {
             const pipeIdx = rec.indexOf(' | ');
             if (pipeIdx > -1) {
                 alertHtml = rec.slice(0, pipeIdx);
-                recText   = rec.slice(pipeIdx + 3);
+                recText = rec.slice(pipeIdx + 3);
             } else {
                 alertHtml = rec;
-                recText   = '';
+                recText = '';
             }
         }
 
         return `
-        <div class="nv-report-card${isCrit ? ' nv-report-critical' : ''}">
+        <div class="nv-report-card${isCrit ? ' nv-report-critical' : ''}${isRedFlag ? ' nv-report-red-flag' : ''}">
+
+            ${isRedFlag ? `
+            <div style="display:flex;align-items:center;gap:0.5rem;padding:0.55rem 0.85rem;
+                        margin:-0.1rem -0.1rem 0.85rem;border-radius:12px 12px 0 0;
+                        background:rgba(239,68,68,0.12);border-bottom:1px solid rgba(239,68,68,0.25);">
+                <span style="font-size:1rem;flex-shrink:0;">🚨</span>
+                <span style="font-size:0.75rem;font-weight:700;color:rgba(239,68,68,0.95);line-height:1.4;">
+                    ${redFlagMsg}
+                </span>
+            </div>` : ''}
 
             <!-- Cabecera -->
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;margin-bottom:0.85rem;">
@@ -838,9 +960,13 @@ function _renderMedicalReportsList() {
                 </div>
                 <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
                     <span style="font-size:0.72rem;color:rgba(148,163,184,0.45);">${date}</span>
-                    ${isCrit ? `<span style="font-size:0.65rem;font-weight:700;padding:2px 7px;border-radius:50px;
-                                              background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);
-                                              color:rgba(239,68,68,0.9);">CRÍTICO</span>` : ''}
+                    ${(isRedFlag || isCrit)
+                ? `<span style="font-size:0.64rem;font-weight:800;padding:2px 9px;border-radius:50px;
+                                        background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);
+                                        color:rgba(239,68,68,0.95);">● ${isRedFlag ? (isEs ? 'ALERTA' : 'ALERT') : (isEs ? 'CRÍTICO' : 'CRITICAL')}</span>`
+                : `<span style="font-size:0.64rem;font-weight:800;padding:2px 9px;border-radius:50px;
+                                        background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);
+                                        color:rgba(16,185,129,0.9);">● ${isEs ? 'ESTABLE' : 'STABLE'}</span>`}
                 </div>
             </div>
 
@@ -885,9 +1011,25 @@ function _renderMedicalReportsList() {
                 <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">${metricPills}</div>
             </div>` : ''}
 
+            <!-- Pie de tarjeta: botón eliminar -->
+            <div style="display:flex;justify-content:flex-end;margin-top:0.75rem;padding-top:0.6rem;
+                        border-top:1px solid rgba(148,163,184,0.08);">
+                <button onclick="deleteReport('${r.id}')"
+                        style="display:inline-flex;align-items:center;gap:0.3rem;padding:4px 12px;
+                               border-radius:50px;border:1px solid rgba(239,68,68,0.2);
+                               background:rgba(239,68,68,0.06);cursor:pointer;
+                               font-size:0.72rem;font-weight:700;color:rgba(239,68,68,0.6);
+                               transition:all 0.18s;"
+                        onmouseover="this.style.background='rgba(239,68,68,0.15)';this.style.color='rgba(239,68,68,0.9)'"
+                        onmouseout="this.style.background='rgba(239,68,68,0.06)';this.style.color='rgba(239,68,68,0.6)'">
+                    🗑 ${isEs ? 'Eliminar' : 'Delete'}
+                </button>
+            </div>
+
         </div>`;
     }).join('');
 
+    container.innerHTML = counterHtml + cardsHtml;
     lucide.createIcons();
 }
 
@@ -900,13 +1042,11 @@ function changeView(v) {
     stopVoiceRecording(true);
     // Activar spinners de sync ANTES del render
     if (v === 'evolution') state.evolutionSyncing = true;
-    if (v === 'health')    state.reportsSyncing   = true;
+    if (v === 'health') state.reportsSyncing = true;
     render();
     // Sincronización asíncrona (limpian el flag y actualizan DOM al terminar)
     if (v === 'evolution') _syncEvolutionFromFirestore();
-    if (v === 'health')    _syncMedicalReportsFromFirestore();
-    // Spotify: refrescar estado del reproductor al entrar a la vista RAS
-    if (v === 'ras' && window.NVSpotify) setTimeout(() => NVSpotify.updateUI(), 120);
+    if (v === 'health') _syncMedicalReportsFromFirestore();
     if (v === 'evolution') setTimeout(_initEvoChart, 150);
     if (v === 'health') setTimeout(_initHealthDropzone, 80);
 }
@@ -921,12 +1061,12 @@ function render() {
 
     // Título de sección en el header
     const viewTitles = {
-        therapy:  { es: 'Rehabilitación AI',   en: 'AI Rehabilitation' },
-        ras:      { es: 'Terapia de Ritmo',     en: 'Rhythm Therapy' },
-        health:   { es: 'Informes Médicos',     en: 'Medical Reports' },
-        security:  { es: 'Seguridad SOS',    en: 'SOS Safety'     },
-        profile:   { es: 'Mi Perfil',        en: 'My Profile'     },
-        evolution: { es: 'Mi Evolución',     en: 'My Evolution'   }
+        therapy: { es: 'Rehabilitación AI', en: 'AI Rehabilitation' },
+        ras: { es: 'Terapia de Ritmo', en: 'Rhythm Therapy' },
+        health: { es: 'Informes Médicos', en: 'Medical Reports' },
+        security: { es: 'Seguridad SOS', en: 'SOS Safety' },
+        profile: { es: 'Mi Perfil', en: 'My Profile' },
+        evolution: { es: 'Mi Evolución', en: 'My Evolution' }
     };
     const titleEl = document.getElementById('view-title');
     if (titleEl) {
@@ -946,6 +1086,8 @@ function render() {
             const el = document.getElementById(id);
             if (el) _attachSOS(el);
         });
+        // Historial YouTube — renderizar tras montar la vista RAS
+        if (document.getElementById('yt-history-wrap')) ytRenderHistory();
     }, 80);
     requestAnimationFrame(() => {
         main.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
@@ -959,23 +1101,53 @@ function render() {
 // ============================================================
 const views = {
 
-    therapy: () => `
+    therapy: () => {
+        const isEs = state.lang === 'es';
+        const cr = _getCardioRestriction();
+        return `
         <div class="neuro-card">
             ${getContextChip('therapy')}
             <h3>${t('therapy_title')}</h3>
             <p class="view-sub">${t('therapy_sub')}</p>
+
+            ${cr.blocked ? `
+            <div style="display:flex;gap:0.65rem;align-items:flex-start;padding:0.85rem 1rem;
+                        border-radius:12px;background:rgba(239,68,68,0.08);
+                        border:1px solid rgba(239,68,68,0.3);margin-bottom:0.5rem;">
+                <span style="font-size:1.1rem;flex-shrink:0;line-height:1.2;">🚨</span>
+                <div>
+                    <div style="font-weight:800;font-size:0.85rem;color:rgba(239,68,68,0.95);margin-bottom:0.25rem;">
+                        ${isEs ? 'Restricción Cardiovascular Activa' : 'Active Cardiovascular Restriction'}
+                    </div>
+                    <div style="font-size:0.77rem;color:rgba(239,68,68,0.75);line-height:1.5;">${cr.reason}</div>
+                    <div style="font-size:0.74rem;color:rgba(251,191,36,0.85);margin-top:0.35rem;">
+                        ${isEs ? '✅ Disponibles: Dibujo y Respiración (baja intensidad)' : '✅ Available: Drawing & Breathing (low intensity)'}
+                    </div>
+                </div>
+            </div>` : ''}
+
             <div style="display:flex;flex-direction:column;gap:1.2rem;margin-top:1.4rem;">
-                <button class="action-btn btn-large btn-primary" onclick="openTwister()">
-                    <i data-lucide="mic"></i> ${t('btn_vocal')}
+                <button class="action-btn btn-large btn-primary"
+                        ${cr.blocked ? 'disabled' : 'onclick="openTwister()"'}
+                        style="display:flex;flex-direction:column;align-items:flex-start;gap:0.35rem;${cr.blocked ? 'opacity:0.35;cursor:not-allowed;filter:grayscale(0.5);' : ''}">
+                    <span style="display:flex;align-items:center;gap:0.5rem;"><i data-lucide="mic"></i> ${t('btn_vocal')}</span>
+                    ${cr.blocked ? `<span style="font-size:0.64rem;padding:2px 10px;border-radius:50px;background:rgba(239,68,68,0.2);color:rgba(239,68,68,0.9);font-weight:800;">🔒 ${isEs ? 'Alta intensidad' : 'High intensity'}</span>` : ''}
                 </button>
-                <button class="action-btn btn-large btn-secondary" onclick="openTapping()">
-                    <i data-lucide="hand"></i> ${t('btn_tapping')}
+                <button class="action-btn btn-large btn-secondary"
+                        ${cr.blocked ? 'disabled' : 'onclick="openTapping()"'}
+                        style="display:flex;flex-direction:column;align-items:flex-start;gap:0.35rem;${cr.blocked ? 'opacity:0.35;cursor:not-allowed;filter:grayscale(0.5);' : ''}">
+                    <span style="display:flex;align-items:center;gap:0.5rem;"><i data-lucide="hand"></i> ${t('btn_tapping')}</span>
+                    ${cr.blocked ? `<span style="font-size:0.64rem;padding:2px 10px;border-radius:50px;background:rgba(239,68,68,0.2);color:rgba(239,68,68,0.9);font-weight:800;">🔒 ${isEs ? 'Alta intensidad' : 'High intensity'}</span>` : ''}
                 </button>
-                <button class="action-btn btn-large" style="background:rgba(22,27,45,0.8);border:1px solid var(--border-glass);" onclick="openMotrizTest()">
-                    <i data-lucide="edit-3"></i> ${t('btn_drawing')}
+                <button class="action-btn btn-large" onclick="openMotrizTest()"
+                        style="background:rgba(22,27,45,0.8);border:1px solid var(--border-glass);display:flex;flex-direction:column;align-items:flex-start;gap:0.35rem;">
+                    <span style="display:flex;align-items:center;gap:0.5rem;"><i data-lucide="edit-3"></i> ${t('btn_drawing')}</span>
+                    ${cr.blocked ? `<span style="font-size:0.64rem;padding:2px 10px;border-radius:50px;background:rgba(16,185,129,0.15);color:rgba(16,185,129,0.9);font-weight:800;">✅ ${isEs ? 'Permitido' : 'Allowed'}</span>` : ''}
                 </button>
-                <button class="action-btn btn-large" style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:var(--primary-green);" onclick="startResp()">
-                    <i data-lucide="wind"></i> ${t('btn_breathing')}
+                <button class="action-btn btn-large" onclick="startResp()"
+                        style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:var(--primary-green);display:flex;flex-direction:column;align-items:flex-start;gap:0.35rem;">
+                    <span style="display:flex;align-items:center;gap:0.5rem;"><i data-lucide="wind"></i> ${t('btn_breathing')}</span>
+                    ${cr.blocked ? `<span style="font-size:0.64rem;padding:2px 10px;border-radius:50px;background:rgba(16,185,129,0.15);color:rgba(16,185,129,0.9);font-weight:800;">✅ ${isEs ? 'Recomendado' : 'Recommended'}</span>` : ''}
                 </button>
             </div>
             <!-- Acceso rápido al historial -->
@@ -1006,19 +1178,20 @@ const views = {
             </div>
             <button id="record-btn" class="action-btn btn-primary" style="width:100%;" onclick="toggleVoiceRecording()">${t('voc_record')}</button>
         </div>
-    `,
+    `;
+    },
 
     health: () => {
         const isEs = state.lang === 'es';
 
         /* ── Calendario semanal ── */
         const dayNames = isEs
-            ? ['Lu','Ma','Mi','Ju','Vi','Sá','Do']
-            : ['Mo','Tu','We','Th','Fr','Sa','Su'];
-        const now      = new Date();
+            ? ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do']
+            : ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+        const now = new Date();
         const todayDow = now.getDay();                       // 0=Dom
         const todayIdx = todayDow === 0 ? 6 : todayDow - 1; // Mon=0
-        const weekCal  = `<div class="week-cal">${dayNames.map((d, i) => {
+        const weekCal = `<div class="week-cal">${dayNames.map((d, i) => {
             const diff = i - todayIdx;
             const date = new Date(now);
             date.setDate(now.getDate() + diff);
@@ -1044,6 +1217,9 @@ const views = {
                             </span>
                         </div>
                     </div>
+                    <button class="med-edit" onclick="editMed(${i})" aria-label="${isEs ? 'Editar' : 'Edit'}">
+                        <i data-lucide="pencil" style="width:16px;height:16px;"></i>
+                    </button>
                     <button class="med-del" onclick="deleteMed(${i})" aria-label="${isEs ? 'Eliminar' : 'Delete'}">
                         <i data-lucide="trash-2" style="width:17px;height:17px;"></i>
                     </button>
@@ -1053,6 +1229,7 @@ const views = {
                </p>`;
 
         const notifGranted = typeof Notification !== 'undefined' && Notification.permission === 'granted';
+        const notifDenied = typeof Notification !== 'undefined' && Notification.permission === 'denied';
 
         // ── Spinner de sincronización ──
         const reportsSyncBadge = state.reportsSyncing ? `
@@ -1074,19 +1251,32 @@ const views = {
                </p>`
             : state.medicalReports.slice(0, 8).map(r => {
                 const diag = r.diagnostico_principal || r.diagnosis || '—';
-                const med  = r.medicacion_activa     || r.medicacion || '';
-                const rec  = r.recomendaciones       || r.analysis   || '—';
-                const src  = r.source || r.fileName  || (isEs ? 'Informe' : 'Report');
+                const med = r.medicacion_activa || r.medicacion || '';
+                const rec = r.recomendaciones || r.analysis || '—';
+                const src = r.source || r.fileName || (isEs ? 'Informe' : 'Report');
+                const mx = r.metricas || {};
+                const feviNum = mx.fevi ? parseInt(mx.fevi) : null;
+                const fcNum = mx.fc ? parseInt(mx.fc) : null;
+                const isAlert = (feviNum !== null && feviNum < 30) || (fcNum !== null && fcNum > 100)
+                    || r.isCritical || rec.includes('⚠') || rec.includes('🚨');
+                const statusBadge = isAlert
+                    ? `<span style="display:inline-flex;align-items:center;gap:3px;font-size:0.64rem;font-weight:800;padding:2px 9px;border-radius:50px;flex-shrink:0;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:rgba(239,68,68,0.95);">● ${isEs ? 'ALERTA' : 'ALERT'}</span>`
+                    : `<span style="display:inline-flex;align-items:center;gap:3px;font-size:0.64rem;font-weight:800;padding:2px 9px;border-radius:50px;flex-shrink:0;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);color:rgba(16,185,129,0.9);">● ${isEs ? 'ESTABLE' : 'STABLE'}</span>`;
+                const diagColor = isAlert ? 'rgba(239,68,68,0.9)' : 'var(--accent-cyan)';
                 return `
-                <div style="padding:1rem;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:0.4rem;">
-                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem;">
-                        <strong style="font-size:0.87rem;color:rgba(241,245,249,0.9);word-break:break-word;max-width:70%;">${src}</strong>
-                        <small style="color:rgba(148,163,184,0.5);font-size:0.76rem;flex-shrink:0;margin-left:8px;">${r.date || ''}</small>
+                <div style="padding:1rem 1rem 1rem 0.9rem;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:0.4rem;
+                            border-left:2px solid ${isAlert ? 'rgba(239,68,68,0.45)' : 'rgba(16,185,129,0.35)'};padding-left:0.85rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem;gap:0.5rem;">
+                        <strong style="font-size:0.87rem;color:rgba(241,245,249,0.9);word-break:break-word;">${src}</strong>
+                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
+                            ${statusBadge}
+                            <small style="color:rgba(148,163,184,0.5);font-size:0.76rem;">${r.date || ''}</small>
+                        </div>
                     </div>
                     <div style="display:flex;flex-direction:column;gap:0.35rem;">
                         <div style="display:flex;gap:0.5rem;align-items:flex-start;">
                             <span style="font-size:0.72rem;font-weight:700;color:rgba(0,242,255,0.6);flex-shrink:0;min-width:80px;">${t('hlt_report_diag')}:</span>
-                            <span style="font-size:0.82rem;color:var(--accent-cyan);font-weight:700;line-height:1.4;">${diag}</span>
+                            <span style="font-size:0.82rem;color:${diagColor};font-weight:700;line-height:1.4;">${diag}</span>
                         </div>
                         ${med ? `<div style="display:flex;gap:0.5rem;align-items:flex-start;">
                             <span style="font-size:0.72rem;font-weight:700;color:rgba(16,185,129,0.6);flex-shrink:0;min-width:80px;">💊 ${t('hlt_report_med')}:</span>
@@ -1109,17 +1299,14 @@ const views = {
             <h3>${t('hlt_title')}</h3>
             <p class="view-sub">${t('hlt_sub')}</p>
 
-            <!-- DROPZONE: input transparente sobre toda el área — el clic llega directo -->
+            <!-- DROPZONE: input transparente multi-archivo -->
             <div id="upload-dropzone" class="nv-dropzone" style="position:relative;">
-
-                <!-- Input invisible que cubre todo el dropzone — ES el área clicable -->
                 <input type="file" id="file-upload-input"
                        accept=".pdf,.jpg,.jpeg,.png"
+                       multiple
                        onchange="handleFileUpload(this)"
                        style="position:absolute;inset:0;width:100%;height:100%;
                               opacity:0;cursor:pointer;z-index:5;">
-
-                <!-- Contenido visual debajo del input (pointer-events:none) -->
                 <div id="dropzone-icon-wrap" style="text-align:center;pointer-events:none;position:relative;z-index:1;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
                          fill="none" stroke="var(--accent-cyan)" stroke-width="1.6"
@@ -1129,16 +1316,20 @@ const views = {
                         <line x1="12" y1="12" x2="12" y2="21"></line>
                         <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
                     </svg>
-                    <p style="font-weight:700;font-size:0.95rem;margin-bottom:0.3rem;">${t('hlt_click')}</p>
-                    <p id="upload-status" style="font-size:0.82rem;color:rgba(148,163,184,0.6);">
+                    <p style="font-weight:700;font-size:0.95rem;margin-bottom:0.2rem;">${t('hlt_click')}</p>
+                    <p style="font-size:0.78rem;color:rgba(148,163,184,0.5);">${isEs ? 'Selecciona hasta 5 archivos a la vez' : 'Select up to 5 files at once'}</p>
+                    <p id="upload-status" style="font-size:0.82rem;color:rgba(148,163,184,0.6);margin-top:0.25rem;">
                         ${t('hlt_fmt')}
                     </p>
                 </div>
             </div>
 
-            <div id="report-ana-box" style="display:none;margin-top:1.2rem;">
+            <!-- Cola de archivos seleccionados -->
+            <div id="batch-queue" style="display:none;margin-top:1rem;"></div>
+
+            <div id="report-ana-box" style="display:none;margin-top:1rem;">
                 <button class="action-btn btn-primary" style="width:100%;min-height:52px;"
-                        onclick="runReportAnalysis()" id="ana-btn">
+                        onclick="runReportAnalysisBatch()" id="ana-btn">
                     <i data-lucide="cpu"></i> ${t('hlt_analyze')}
                 </button>
             </div>
@@ -1146,8 +1337,16 @@ const views = {
 
         <!-- VALORACIONES RECIENTES -->
         <div class="neuro-card">
-            <h3>${t('hlt_recent')}</h3>
-            <div id="reports-list">${initialReports}</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem;">
+                <h3 style="margin:0;">${t('hlt_recent')}</h3>
+                ${state.medicalReports.length > 0 ? `
+                <span style="font-size:0.72rem;color:rgba(148,163,184,0.4);">
+                    ${state.medicalReports.length} ${isEs ? 'informe(s)' : 'report(s)'}
+                </span>` : ''}
+            </div>
+            <div id="reports-list" style="max-height:72vh;overflow-y:auto;padding-right:2px;">
+                ${initialReports}
+            </div>
         </div>
 
         <!-- DESCARGAR PDF -->
@@ -1202,23 +1401,46 @@ const views = {
             </div>
 
             <!-- Banner notificaciones -->
-            <div id="notif-banner" class="notif-banner" onclick="requestNotifPermission()">
+            <div id="notif-banner" class="notif-banner" onclick="requestNotifPermission()"
+                 style="border-color:${notifGranted ? 'rgba(16,185,129,0.3)' : notifDenied ? 'rgba(239,68,68,0.25)' : 'rgba(0,242,255,0.15)'};cursor:pointer;">
                 <div class="notif-icon">
-                    <i data-lucide="bell" style="width:18px;height:18px;color:var(--accent-cyan);"></i>
+                    <i data-lucide="${notifGranted ? 'bell-ring' : notifDenied ? 'bell-off' : 'bell'}"
+                       style="width:18px;height:18px;color:${notifGranted ? 'var(--primary-green)' : notifDenied ? 'rgba(239,68,68,0.7)' : 'var(--accent-cyan)'};"></i>
                 </div>
-                <div>
+                <div style="flex:1;min-width:0;">
                     <div style="font-weight:700;font-size:0.88rem;" id="notif-banner-text">
                         ${notifGranted
-                            ? (isEs ? 'Recordatorios activos ✓' : 'Reminders active ✓')
-                            : (isEs ? 'Activar recordatorios de medicación' : 'Enable medication reminders')}
+                ? (isEs ? 'Recordatorios activos ✓' : 'Reminders active ✓')
+                : notifDenied
+                    ? (isEs ? 'Bloqueadas — Toca para ver cómo activar' : 'Blocked — Tap to see how to enable')
+                    : (isEs ? 'Activar recordatorios de medicación' : 'Enable medication reminders')}
                     </div>
                     <div style="font-size:0.75rem;color:rgba(148,163,184,0.6);margin-top:2px;">
                         ${isEs ? 'Notificaciones en el dispositivo' : 'Device notifications'}
                     </div>
                 </div>
-                <i data-lucide="${notifGranted ? 'check-circle' : 'chevron-right'}"
-                   style="width:18px;height:18px;color:${notifGranted ? 'var(--primary-green)' : 'rgba(148,163,184,0.4)'};margin-left:auto;"></i>
+                <i data-lucide="${notifGranted ? 'check-circle' : notifDenied ? 'alert-circle' : 'chevron-right'}"
+                   style="width:18px;height:18px;color:${notifGranted ? 'var(--primary-green)' : notifDenied ? 'rgba(239,68,68,0.6)' : 'rgba(148,163,184,0.4)'};margin-left:auto;flex-shrink:0;"></i>
             </div>
+
+            <!-- Guía de ayuda — permisos denegados (se muestra/oculta por JS) -->
+            <div id="notif-denied-guide" style="display:${notifDenied ? 'block' : 'none'};"></div>
+
+            <!-- Botón de diagnóstico — visible solo con permiso concedido -->
+            ${notifGranted ? `
+            <div style="display:flex;justify-content:flex-end;margin-top:0.55rem;">
+                <button onclick="testMedicationAlert()"
+                        style="display:inline-flex;align-items:center;gap:0.4rem;
+                               padding:5px 14px;border-radius:50px;cursor:pointer;
+                               border:1px solid rgba(16,185,129,0.25);
+                               background:rgba(16,185,129,0.07);
+                               font-size:0.72rem;font-weight:700;
+                               color:rgba(16,185,129,0.75);transition:all 0.18s;"
+                        onmouseover="this.style.background='rgba(16,185,129,0.15)';this.style.color='rgba(16,185,129,1)'"
+                        onmouseout="this.style.background='rgba(16,185,129,0.07)';this.style.color='rgba(16,185,129,0.75)'">
+                    🔔 ${isEs ? 'Probar Notificación Ahora' : 'Test Notification Now'}
+                </button>
+            </div>` : ''}
         </div>`;
     },
 
@@ -1284,10 +1506,10 @@ const views = {
             <!-- Presets de cadencia -->
             <div style="display:flex;gap:0.5rem;margin-bottom:1.2rem;">
                 ${[
-                    { bpm: 80,  es: '🚶 Calentamiento', en: '🚶 Warm-up'     },
-                    { bpm: 110, es: '🚶 Marcha Normal',  en: '🚶 Normal Gait' },
-                    { bpm: 130, es: '💪 Rehabilitación', en: '💪 Rehab'       }
-                ].map(m => `
+                { bpm: 80, es: '🚶 Calentamiento', en: '🚶 Warm-up' },
+                { bpm: 110, es: '🚶 Marcha Normal', en: '🚶 Normal Gait' },
+                { bpm: 130, es: '💪 Rehabilitación', en: '💪 Rehab' }
+            ].map(m => `
                 <button onclick="rasSetPreset(${m.bpm})" class="action-btn ras-preset-btn"
                         id="ras-preset-${m.bpm}"
                         style="flex:1;padding:0.5rem 0.3rem;font-size:0.72rem;
@@ -1312,150 +1534,244 @@ const views = {
                    color:var(--secondary-blue);margin-top:1px;"></i>
                 <span style="font-size:0.76rem;color:rgba(148,163,184,0.7);line-height:1.5;">
                     ${isEs
-                        ? 'Detección de congelación activa. Si el metrónomo está encendido e identifies inmovilidad >3 seg, el <strong style="color:rgba(148,163,184,0.9);">Pulso de Rescate</strong> se activará automáticamente.'
-                        : 'Freeze detection active. If the metronome is on and stillness >3 sec is detected, the <strong style="color:rgba(148,163,184,0.9);">Rescue Pulse</strong> activates automatically.'}
+                ? 'Detección de congelación activa. Si el metrónomo está encendido e identifies inmovilidad >3 seg, el <strong style="color:rgba(148,163,184,0.9);">Pulso de Rescate</strong> se activará automáticamente.'
+                : 'Freeze detection active. If the metronome is on and stillness >3 sec is detected, the <strong style="color:rgba(148,163,184,0.9);">Rescue Pulse</strong> activates automatically.'}
                 </span>
             </div>
         </div>
 
-        <!-- ══ HUB DE MUSICOTERAPIA — SPOTIFY ══════════════════ -->
-        <div class="sp-glass-card">
+        <!-- ══ HUB DE MUSICOTERAPIA — YOUTUBE ══════════════════ -->
+        <div class="neuro-card" style="margin-top:1.2rem;">
             <!-- Cabecera -->
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem;">
-                <div>
-                    <div style="display:flex;align-items:center;gap:0.55rem;">
-                        <svg viewBox="0 0 24 24" width="22" height="22" fill="#1DB954" style="flex-shrink:0;">
-                            <circle cx="12" cy="12" r="12" fill="#1DB954"/>
-                            <path d="M17.9 10.9C14.7 9 9.35 8.8 6.3 9.75c-.5.15-1-.15-1.15-.6-.15-.5.15-1 .6-1.15 3.55-1.05 9.4-.85 13.1 1.35.45.25.6.85.35 1.3-.25.35-.85.5-1.3.25zm-.1 2.8c-.25.4-.75.5-1.15.25-2.7-1.65-6.8-2.15-9.95-1.15-.4.1-.85-.1-.95-.5-.1-.4.1-.85.5-.95 3.65-1.1 8.15-.55 11.25 1.35.4.25.5.75.3 1zm-1.3 2.7c-.2.35-.65.45-1 .25-2.35-1.45-5.3-1.75-8.8-.95-.35.1-.7-.15-.75-.5-.1-.35.15-.7.5-.75 3.8-.85 7.1-.5 9.7 1.1.35.15.45.65.35 .85z" fill="white"/>
-                        </svg>
-                        <div>
-                            <h4 style="margin:0;font-size:1rem;font-family:var(--font-accent);">${t('sp_hub_title')}</h4>
-                            <p style="margin:0;font-size:0.72rem;color:rgba(148,163,184,0.6);">${t('sp_hub_sub')}</p>
-                        </div>
-                    </div>
+            <div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:1.2rem;">
+                <div style="width:40px;height:40px;border-radius:50%;
+                            background:linear-gradient(135deg,#FF0000,#cc0000);
+                            display:flex;align-items:center;justify-content:center;flex-shrink:0;
+                            box-shadow:0 4px 14px rgba(255,0,0,0.3);">
+                    <svg viewBox="0 0 24 24" fill="white" width="20" height="20">
+                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    </svg>
                 </div>
-                <span id="sp-connect-status" style="font-size:0.72rem;font-weight:700;
-                      transition:color 0.3s;color:rgba(148,163,184,0.4);">
-                    ${t('sp_status_off')}
+                <div>
+                    <h4 style="margin:0;font-size:1rem;font-family:var(--font-accent);">${t('yt_hub_title')}</h4>
+                    <p style="margin:0;font-size:0.72rem;color:rgba(148,163,184,0.6);">${t('yt_hub_sub')}</p>
+                </div>
+            </div>
+
+            <!-- Búsquedas de playlists terapéuticas -->
+            <p style="font-size:0.73rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;
+                      color:rgba(148,163,184,0.5);margin-bottom:0.65rem;">
+                ${t('yt_search_label')}
+            </p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.55rem;margin-bottom:1.3rem;">
+                <button class="yt-search-btn" onclick="ytSearch(0)">
+                    🚶 100 BPM<br>
+                    <small>${isEs ? 'Marcha Suave' : 'Gentle Walk'}</small>
+                </button>
+                <button class="yt-search-btn" onclick="ytSearch(1)">
+                    🦶 110 BPM<br>
+                    <small>${isEs ? 'Marcha Normal' : 'Normal Gait'}</small>
+                </button>
+                <button class="yt-search-btn" onclick="ytSearch(2)">
+                    💪 120 BPM<br>
+                    <small>${isEs ? 'Rehabilitación' : 'Rehabilitation'}</small>
+                </button>
+                <button class="yt-search-btn" onclick="ytSearch(3)">
+                    😌 ${isEs ? 'Relajación' : 'Relaxation'}<br>
+                    <small>${isEs ? 'Calma y foco' : 'Calm & Focus'}</small>
+                </button>
+            </div>
+
+            <!-- Embed directo -->
+            <div style="border-top:1px solid rgba(255,255,255,0.07);padding-top:1.1rem;">
+                <p style="font-size:0.73rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;
+                          color:rgba(148,163,184,0.5);margin-bottom:0.65rem;">
+                    ${t('yt_embed_label')}
+                </p>
+                <div style="display:flex;gap:0.5rem;margin-bottom:0.55rem;">
+                    <input id="yt-url-inp" type="url"
+                           placeholder="${t('yt_url_ph')}"
+                           style="flex:1;padding:0.65rem 0.85rem;border-radius:10px;
+                                  border:1px solid rgba(255,255,255,0.12);background:rgba(10,15,30,0.6);
+                                  color:rgba(241,245,249,0.9);font-size:0.82rem;outline:none;
+                                  transition:border-color 0.2s;"
+                           onfocus="this.style.borderColor='rgba(255,0,0,0.45)'"
+                           onblur="this.style.borderColor='rgba(255,255,255,0.12)'"
+                           onkeydown="if(event.key==='Enter') ytLoad()">
+                    <button class="action-btn yt-play-btn"
+                            onclick="ytLoad()"
+                            title="${t('yt_load_btn')}"
+                            style="background:rgba(255,0,0,0.15);
+                                   border:1px solid rgba(255,0,0,0.35);color:#ff4444;
+                                   font-weight:700;white-space:nowrap;min-height:44px;border-radius:10px;
+                                   flex-shrink:0;">
+                        <span class="yt-play-text">▶ ${t('yt_load_btn')}</span>
+                        <span class="yt-play-icon">▶</span>
+                    </button>
+                </div>
+                <input id="yt-name-inp" type="text" maxlength="60"
+                       placeholder="${t('yt_name_ph')}"
+                       style="width:100%;box-sizing:border-box;padding:0.5rem 0.85rem;
+                              border-radius:10px;border:1px solid rgba(255,255,255,0.08);
+                              background:rgba(10,15,30,0.45);color:rgba(241,245,249,0.85);
+                              font-size:0.78rem;outline:none;margin-bottom:0.9rem;
+                              transition:border-color 0.2s;"
+                       onfocus="this.style.borderColor='rgba(0,242,255,0.4)'"
+                       onblur="this.style.borderColor='rgba(255,255,255,0.08)'"
+                       onkeydown="if(event.key==='Enter') ytLoad()">
+
+                <!-- Player -->
+                <div id="yt-wrap" style="display:none;border-radius:14px;overflow:hidden;
+                                         background:#000;aspect-ratio:16/9;margin-bottom:0.6rem;">
+                    <iframe id="yt-frame" src="about:blank"
+                            style="width:100%;height:100%;border:none;"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share"
+                            allowfullscreen>
+                    </iframe>
+                </div>
+
+                <!-- Botón Detener (visible solo cuando hay vídeo) -->
+                <div id="yt-stop-wrap" style="display:none;margin-bottom:0.7rem;">
+                    <button onclick="ytStop()"
+                            style="width:100%;padding:0.6rem;border-radius:10px;
+                                   background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);
+                                   color:rgba(239,68,68,0.9);font-weight:700;font-size:0.84rem;
+                                   cursor:pointer;transition:background 0.2s;"
+                            onmouseover="this.style.background='rgba(239,68,68,0.2)'"
+                            onmouseout="this.style.background='rgba(239,68,68,0.1)'">
+                        ${t('yt_stop_btn')}
+                    </button>
+                </div>
+
+                <p id="yt-hint" style="font-size:0.72rem;color:rgba(148,163,184,0.45);
+                                        text-align:center;margin:0 0 0.5rem;">
+                    💡 ${t('yt_hint')}
+                </p>
+            </div>
+
+            <!-- Historial de playlists guardadas -->
+            <div id="yt-history-wrap" style="margin-top:1rem;"></div>
+
+            <!-- Tip metrónomo -->
+            <div style="display:flex;align-items:flex-start;gap:0.5rem;margin-top:0.8rem;
+                        padding:0.6rem 0.85rem;border-radius:12px;
+                        background:rgba(148,163,184,0.05);border:1px solid rgba(255,255,255,0.06);">
+                <i data-lucide="info" style="width:14px;height:14px;flex-shrink:0;
+                   color:rgba(148,163,184,0.5);margin-top:1px;"></i>
+                <span style="font-size:0.71rem;color:rgba(148,163,184,0.55);line-height:1.5;">
+                    ${t('yt_tip')}
                 </span>
             </div>
-
-            <!-- Botón conectar / desconectar -->
-            <button id="sp-connect-btn" class="action-btn"
-                    style="width:100%;margin-bottom:1rem;font-size:0.88rem;font-weight:700;
-                           background:rgba(29,185,84,0.15);border:1px solid rgba(29,185,84,0.4);
-                           color:#1DB954;min-height:52px;"
-                    onclick="showSpotifyConsent()">
-                ${t('sp_connect')}
-            </button>
-            <p style="text-align:center;font-size:0.69rem;color:rgba(148,163,184,0.4);
-                      margin-top:-0.6rem;margin-bottom:1rem;">
-                ${t('sp_premium_note')}
-            </p>
-
-            <!-- Controles del reproductor (visibles solo cuando conectado + dispositivo listo) -->
-            <div id="sp-controls" style="display:none;">
-
-                <!-- Track info -->
-                <div style="text-align:center;margin-bottom:1rem;">
-                    <div id="sp-track-name"
-                         style="font-size:0.94rem;font-weight:700;color:var(--text-dark);
-                                white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-                                max-width:100%;padding:0 0.5rem;">
-                        ${t('sp_track_idle')}
-                    </div>
-                    <div id="sp-artist-name"
-                         style="font-size:0.75rem;color:rgba(148,163,184,0.6);margin-top:0.25rem;">
-                    </div>
-                </div>
-
-                <!-- Barra de progreso (alto contraste) -->
-                <div style="margin-bottom:0.4rem;">
-                    <div class="sp-progress-track">
-                        <div id="sp-progress-fill" class="sp-progress-fill"></div>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;
-                                font-size:0.68rem;color:rgba(148,163,184,0.45);margin-top:0.3rem;">
-                        <span id="sp-progress-pos">0:00</span>
-                        <span id="sp-progress-dur">0:00</span>
-                    </div>
-                </div>
-
-                <!-- Controles magnéticos (área táctil expandida para usuarios con temblor) -->
-                <div style="display:flex;align-items:center;justify-content:center;gap:1.4rem;
-                            margin:1.1rem 0 0.6rem;">
-                    <!-- Anterior -->
-                    <button class="sp-btn-magnetic sp-btn-secondary"
-                            onclick="spotifyPrev()"
-                            aria-label="${isEs ? 'Pista anterior' : 'Previous track'}">
-                        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
-                            <polygon points="19,5 5,12 19,19"/>
-                            <rect x="5" y="5" width="2" height="14" rx="1"/>
-                        </svg>
-                    </button>
-
-                    <!-- Play / Pause — botón principal grande -->
-                    <button id="sp-play-btn" class="sp-btn-magnetic sp-btn-primary"
-                            onclick="spotifyTogglePlay()"
-                            aria-label="${isEs ? 'Reproducir / Pausar' : 'Play / Pause'}">
-                        <svg viewBox="0 0 24 24" fill="currentColor" width="30" height="30">
-                            <polygon points="5,3 19,12 5,21"/>
-                        </svg>
-                    </button>
-
-                    <!-- Siguiente -->
-                    <button class="sp-btn-magnetic sp-btn-secondary"
-                            onclick="spotifyNext()"
-                            aria-label="${isEs ? 'Siguiente pista' : 'Next track'}">
-                        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
-                            <polygon points="5,5 19,12 5,19"/>
-                            <rect x="17" y="5" width="2" height="14" rx="1"/>
-                        </svg>
-                    </button>
-                </div>
-
-                <!-- Audio Ducking indicator -->
-                <div id="sp-duck-strip"
-                     style="display:none;align-items:center;gap:0.5rem;
-                            padding:0.55rem 0.9rem;border-radius:12px;margin-top:0.8rem;
-                            background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);">
-                    <div style="width:8px;height:8px;border-radius:50%;background:#10b981;
-                                animation:sp-duck-pulse 1.2s infinite;flex-shrink:0;"></div>
-                    <span style="font-size:0.72rem;color:rgba(148,163,184,0.75);line-height:1.4;">
-                        ${t('sp_duck_notice')}
-                    </span>
-                </div>
-
-            </div><!-- /sp-controls -->
-
-            <!-- Playlists terapéuticas (visibles cuando conectado) -->
-            <div id="sp-playlists-wrap" style="display:none;margin-top:1.1rem;">
-                <p style="font-size:0.73rem;font-weight:700;letter-spacing:0.08em;
-                           text-transform:uppercase;color:rgba(148,163,184,0.5);margin-bottom:0.7rem;">
-                    ${t('sp_playlists')}
-                </p>
-                <div style="display:flex;flex-direction:column;gap:0.55rem;">
-                    ${(window.NVSpotify ? NVSpotify.getPlaylists() : []).map(pl => `
-                    <button class="sp-playlist-btn"
-                            onclick="spotifyPickPlaylist('${pl.id}', ${pl.bpm})"
-                            title="${isEs ? pl.desc_es : pl.desc_en}">
-                        <span style="font-size:0.9rem;font-weight:700;">${isEs ? pl.es : pl.en}</span>
-                        <span style="font-size:0.7rem;color:rgba(148,163,184,0.55);margin-left:auto;">
-                            ${isEs ? pl.desc_es : pl.desc_en}
-                        </span>
-                    </button>`).join('')}
-                </div>
-            </div>
-
-        </div><!-- /sp-glass-card -->`;
+        </div><!-- /yt hub -->`;
     },
 
     security: () => {
         const isEs = state.lang === 'es';
+        const u    = state.user || {};
         const { lat, lon } = state.gpsMetadata;
         // Coordenadas numéricas para iframe inicial (Madrid por defecto)
         const defLat = 40.4168, defLon = -3.7038, delta = 0.015;
         return `
+        <!-- CONTACTOS DE EMERGENCIA -->
+        <div class="neuro-card">
+            <h3 style="color:var(--accent-cyan);display:flex;align-items:center;gap:0.5rem;">
+                <i data-lucide="phone-call" style="width:20px;height:20px;flex-shrink:0;"></i>
+                ${t('sec_contacts_title')}
+            </h3>
+            <p class="view-sub">${t('sec_contacts_sub')}</p>
+
+            ${[1,2,3].map(n => {
+                const ec = (u[`ec${n}`] || {});
+                const hasData = ec.name || ec.phone;
+                return `
+                <div id="sec-ec${n}-row" style="margin-bottom:0.75rem;padding:0.65rem 0.85rem;
+                            border-radius:12px;border:1px solid rgba(255,255,255,0.07);
+                            background:rgba(10,15,30,0.4);transition:border-color 0.2s;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.45rem;">
+                        <p style="font-size:0.68rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;
+                                   color:rgba(0,242,255,0.5);margin:0;">
+                            ${isEs ? 'Contacto' : 'Contact'} ${n}
+                        </p>
+                        <div style="display:flex;gap:0.25rem;">
+                            ${ec.phone ? `
+                            <a href="tel:${ec.phone.replace(/\s/g,'')}" id="sec-ec${n}-call-btn"
+                               title="${isEs ? 'Llamar' : 'Call'}"
+                               style="width:30px;height:30px;border:none;border-radius:8px;cursor:pointer;
+                                      background:rgba(16,185,129,0.12);color:rgba(16,185,129,0.7);
+                                      display:flex;align-items:center;justify-content:center;
+                                      text-decoration:none;transition:color 0.18s,background 0.18s;"
+                               onmouseover="this.style.color='rgba(16,185,129,1)';this.style.background='rgba(16,185,129,0.25)'"
+                               onmouseout="this.style.color='rgba(16,185,129,0.7)';this.style.background='rgba(16,185,129,0.12)'">
+                                <i data-lucide="phone-call" style="width:14px;height:14px;pointer-events:none;"></i>
+                            </a>` : `
+                            <span id="sec-ec${n}-call-btn"
+                                  style="width:30px;height:30px;border-radius:8px;
+                                         background:rgba(255,255,255,0.03);color:rgba(148,163,184,0.2);
+                                         display:flex;align-items:center;justify-content:center;">
+                                <i data-lucide="phone-call" style="width:14px;height:14px;"></i>
+                            </span>`}
+                            <button onclick="secEditContact(${n})" id="sec-ec${n}-edit-btn"
+                                    title="${isEs ? 'Editar' : 'Edit'}"
+                                    style="width:30px;height:30px;border:none;border-radius:8px;cursor:pointer;
+                                           background:transparent;color:rgba(0,242,255,0.35);
+                                           display:flex;align-items:center;justify-content:center;
+                                           transition:color 0.18s,background 0.18s;"
+                                    onmouseover="this.style.color='rgba(0,242,255,0.85)';this.style.background='rgba(0,242,255,0.08)'"
+                                    onmouseout="this.style.color='rgba(0,242,255,0.35)';this.style.background='transparent'">
+                                <i data-lucide="pencil" style="width:15px;height:15px;pointer-events:none;"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:0.45rem;">
+                        <input id="sec-ec${n}-name" type="text" readonly
+                               value="${(ec.name || '').replace(/"/g,'&quot;')}"
+                               placeholder="${t('sec_contact_ph_name')}"
+                               onclick="secEditContact(${n})"
+                               style="flex:1;min-width:0;padding:0.45rem 0.6rem;border-radius:8px;
+                                      border:1px solid transparent;background:transparent;
+                                      color:${hasData ? 'rgba(241,245,249,0.85)' : 'rgba(148,163,184,0.35)'};
+                                      font-size:0.8rem;outline:none;transition:all 0.2s;cursor:pointer;">
+                        <input id="sec-ec${n}-phone" type="tel" readonly
+                               value="${(ec.phone || '').replace(/"/g,'&quot;')}"
+                               placeholder="${t('sec_contact_ph_phone')}"
+                               onclick="secEditContact(${n})"
+                               style="flex:1;min-width:0;padding:0.45rem 0.6rem;border-radius:8px;
+                                      border:1px solid transparent;background:transparent;
+                                      color:${hasData ? 'rgba(241,245,249,0.85)' : 'rgba(148,163,184,0.35)'};
+                                      font-size:0.8rem;outline:none;transition:all 0.2s;cursor:pointer;">
+                        <button onclick="secSaveContact(${n})" id="sec-ec${n}-save-btn"
+                                title="${isEs ? 'Guardar' : 'Save'}"
+                                style="display:none;width:34px;height:34px;min-width:34px;border:none;
+                                       border-radius:8px;cursor:pointer;flex-shrink:0;
+                                       background:rgba(16,185,129,0.15);color:rgba(16,185,129,0.9);
+                                       align-items:center;justify-content:center;
+                                       transition:background 0.18s;"
+                                onmouseover="this.style.background='rgba(16,185,129,0.3)'"
+                                onmouseout="this.style.background='rgba(16,185,129,0.15)'">
+                            <i data-lucide="check" style="width:16px;height:16px;pointer-events:none;"></i>
+                        </button>
+                    </div>
+                </div>`;
+            }).join('')}
+
+            <!-- Número oficial según país -->
+            <div style="display:flex;align-items:center;gap:0.75rem;margin-top:1rem;padding:0.75rem 0.9rem;
+                        border-radius:12px;background:rgba(239,68,68,0.06);
+                        border:1px solid rgba(239,68,68,0.18);">
+                <i data-lucide="phone" style="width:18px;height:18px;flex-shrink:0;color:rgba(239,68,68,0.7);"></i>
+                <div>
+                    <p style="font-size:0.7rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;
+                               color:rgba(239,68,68,0.6);margin:0 0 0.1rem;">${t('sec_official_title')}</p>
+                    <p style="font-size:1rem;font-weight:900;color:rgba(239,68,68,0.9);margin:0;">
+                        ${_getEmergencyNumber(u.country).label}
+                    </p>
+                    <p style="font-size:0.68rem;color:rgba(148,163,184,0.5);margin:0.15rem 0 0;">
+                        ${t('sec_official_sub')}
+                    </p>
+                </div>
+            </div>
+        </div>
+
         <!-- SOS -->
         <div class="neuro-card" style="border:2px solid var(--accent-red);background:rgba(239,68,68,0.04);">
             ${getContextChip('security')}
@@ -1483,8 +1799,8 @@ const views = {
             </h3>
             <p class="view-sub">
                 ${isEs
-                    ? 'Su posición exacta se comparte en caso de emergencia SOS.'
-                    : 'Your exact position is shared in case of SOS emergency.'}
+                ? 'Su posición exacta se comparte en caso de emergencia SOS.'
+                : 'Your exact position is shared in case of SOS emergency.'}
             </p>
 
             <!-- Barra de coordenadas -->
@@ -1499,7 +1815,7 @@ const views = {
             <!-- OpenStreetMap embed -->
             <div class="gps-map-wrap">
                 <iframe id="gps-map-frame"
-                    src="https://www.openstreetmap.org/export/embed.html?bbox=${defLon-delta},${defLat-delta},${defLon+delta},${defLat+delta}&layer=mapnik&marker=${defLat},${defLon}"
+                    src="https://www.openstreetmap.org/export/embed.html?bbox=${defLon - delta},${defLat - delta},${defLon + delta},${defLat + delta}&layer=mapnik&marker=${defLat},${defLon}"
                     title="${isEs ? 'Mapa de ubicación' : 'Location map'}"
                     loading="lazy">
                 </iframe>
@@ -1543,7 +1859,7 @@ const views = {
 
         // ── Chip de estado Firebase ──
         const fbReady = window.NVFirebase && NVFirebase.isReady();
-        const fbChip  = `
+        const fbChip = `
         <div style="display:flex;align-items:center;gap:0.5rem;padding:0.55rem 0.9rem;
                     border-radius:12px;margin-bottom:0.75rem;font-size:0.77rem;font-weight:700;
                     background:${fbReady ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.07)'};
@@ -1551,8 +1867,8 @@ const views = {
                     color:${fbReady ? '#34d399' : '#f87171'};">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;">
                 ${fbReady
-                    ? '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>'
-                    : '<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>'}
+                ? '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>'
+                : '<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>'}
             </svg>
             ${fbReady
                 ? (isEs ? 'Firebase conectado · Datos en la nube' : 'Firebase connected · Cloud data active')
@@ -1622,8 +1938,8 @@ const views = {
             </h3>
             <p class="view-sub">
                 ${isEs
-                    ? 'Historial acumulado de análisis IA. Se actualiza automáticamente al analizar un informe.'
-                    : 'Accumulated AI analysis history. Auto-updated when a report is analyzed.'}
+                ? 'Historial acumulado de análisis IA. Se actualiza automáticamente al analizar un informe.'
+                : 'Accumulated AI analysis history. Auto-updated when a report is analyzed.'}
             </p>
             <div id="profile-summary-list">
                 ${summaryHTML}
@@ -1638,11 +1954,11 @@ const views = {
 
         <!-- ── RESUMEN SEMANAL ── -->
         ${(() => {
-            if (!window.NVHistory) return '';
-            const summary = NVHistory.getWeeklySummary().filter(s => s.count > 0);
-            if (!summary.length) return '';
-            const meta = NVHistory.TEST_META;
-            return `
+                if (!window.NVHistory) return '';
+                const summary = NVHistory.getWeeklySummary().filter(s => s.count > 0);
+                if (!summary.length) return '';
+                const meta = NVHistory.TEST_META;
+                return `
             <div class="neuro-card" style="background:linear-gradient(145deg,rgba(22,33,62,0.9),rgba(14,20,45,0.95));
                          border:1px solid rgba(0,242,255,0.12);">
                 <h3 style="color:var(--accent-cyan);font-size:1.1rem;margin-bottom:0.9rem;">
@@ -1651,12 +1967,12 @@ const views = {
                 </h3>
                 <div style="display:flex;flex-wrap:wrap;gap:0.55rem;">
                     ${summary.map(s => {
-                        const m = meta[s.type];
-                        const trendIcon = s.trend === null ? '' :
-                            s.trend > 2 ? ' ↑' : s.trend < -2 ? ' ↓' : ' →';
-                        const trendColor = s.trend === null ? 'inherit' :
-                            s.trend > 2 ? '#10b981' : s.trend < -2 ? '#ef4444' : '#f59e0b';
-                        return `<div style="display:flex;align-items:center;gap:0.45rem;
+                    const m = meta[s.type];
+                    const trendIcon = s.trend === null ? '' :
+                        s.trend > 2 ? ' ↑' : s.trend < -2 ? ' ↓' : ' →';
+                    const trendColor = s.trend === null ? 'inherit' :
+                        s.trend > 2 ? '#10b981' : s.trend < -2 ? '#ef4444' : '#f59e0b';
+                    return `<div style="display:flex;align-items:center;gap:0.45rem;
                                             padding:0.45rem 0.8rem;border-radius:12px;
                                             background:${m.color}12;border:1px solid ${m.color}25;">
                             <i data-lucide="${m.icon}" style="width:13px;height:13px;color:${m.color};flex-shrink:0;"></i>
@@ -1665,10 +1981,10 @@ const views = {
                             </span>
                             ${s.trend !== null ? `<span style="font-size:0.75rem;font-weight:700;color:${trendColor};">${trendIcon}</span>` : ''}
                         </div>`;
-                    }).join('')}
+                }).join('')}
                 </div>
             </div>`;
-        })()}
+            })()}
 
         <!-- ── AJUSTES AVANZADOS (Módulos IA) ── -->
         <div class="neuro-card nv-settings-card">
@@ -1678,8 +1994,8 @@ const views = {
             </h3>
             <p class="view-sub" style="margin-bottom:1.2rem;">
                 ${isEs
-                    ? 'Activa o desactiva los módulos de inteligencia adaptativa.'
-                    : 'Enable or disable adaptive AI modules.'}
+                ? 'Activa o desactiva los módulos de inteligencia adaptativa.'
+                : 'Enable or disable adaptive AI modules.'}
             </p>
             ${[
                 {
@@ -1687,32 +2003,32 @@ const views = {
                     icon: 'magnet',
                     titleEs: 'Botones Magnéticos',
                     titleEn: 'Magnetic Buttons',
-                    descEs:  'Amplía el área de toque y filtra temblores en los controles',
-                    descEn:  'Expands touch area and filters tremor-induced mis-taps'
+                    descEs: 'Amplía el área de toque y filtra temblores en los controles',
+                    descEn: 'Expands touch area and filters tremor-induced mis-taps'
                 },
                 {
                     key: 'freezeDetection',
                     icon: 'zap',
                     titleEs: 'Pulso Sónico de Rescate',
                     titleEn: 'Sonic Rescue Pulse',
-                    descEs:  'Detecta congelación de marcha y activa ritmo terapéutico 80 Hz',
-                    descEn:  'Detects gait freezing and triggers therapeutic 80 Hz rhythm'
+                    descEs: 'Detecta congelación de marcha y activa ritmo terapéutico 80 Hz',
+                    descEn: 'Detects gait freezing and triggers therapeutic 80 Hz rhythm'
                 },
                 {
                     key: 'voiceInsights',
                     icon: 'mic',
                     titleEs: 'Análisis de Prosodia',
                     titleEn: 'Prosody Analysis',
-                    descEs:  'Detecta caídas de volumen vocal (hipofonía) durante la evaluación',
-                    descEn:  'Detects vocal amplitude drops (hypophonia) during evaluation'
+                    descEs: 'Detecta caídas de volumen vocal (hipofonía) durante la evaluación',
+                    descEn: 'Detects vocal amplitude drops (hypophonia) during evaluation'
                 },
                 {
                     key: 'predictiveAlerts',
                     icon: 'bell',
                     titleEs: 'Alertas Predictivas',
                     titleEn: 'Predictive Alerts',
-                    descEs:  'Gemelo digital: notifica cuando tus niveles de energía pueden bajar',
-                    descEn:  'Digital twin: notifies when your energy levels may drop'
+                    descEs: 'Gemelo digital: notifica cuando tus niveles de energía pueden bajar',
+                    descEn: 'Digital twin: notifies when your energy levels may drop'
                 }
             ].map(mod => {
                 const nvSettings = (() => { try { return JSON.parse(localStorage.getItem('nv_settings') || '{}'); } catch { return {}; } })();
@@ -1742,9 +2058,9 @@ const views = {
 
     // ── VISTA: MI EVOLUCIÓN — Dashboard Clínico ─────────────────
     evolution: () => {
-        const isEs   = state.lang === 'es';
+        const isEs = state.lang === 'es';
         const allSessions = window.NVHistory ? NVHistory.getAll() : (state.sessionHistory || []);
-        const meta   = window.NVHistory ? NVHistory.TEST_META : {};
+        const meta = window.NVHistory ? NVHistory.TEST_META : {};
         const filter = state.evolutionFilter || 'all';
 
         // ── Skeleton loader mientras sincroniza ──
@@ -1762,10 +2078,10 @@ const views = {
                 <div class="nv-sk-bar nv-sk-wide"></div>
                 <div class="nv-sk-bar nv-sk-narrow" style="margin-top:0.6rem;"></div>
                 <div style="margin-top:1.2rem;display:flex;gap:0.7rem;">
-                    ${[1,2,3].map(() => '<div class="nv-sk-chip"></div>').join('')}
+                    ${[1, 2, 3].map(() => '<div class="nv-sk-chip"></div>').join('')}
                 </div>
             </div>
-            ${[1,2,3].map(() => `
+            ${[1, 2, 3].map(() => `
             <div class="neuro-card nv-skeleton-card" style="padding:1.1rem 1.2rem;">
                 <div style="display:flex;gap:0.8rem;align-items:center;">
                     <div class="nv-sk-avatar"></div>
@@ -1786,11 +2102,11 @@ const views = {
 
         // ── Chips de filtro ──
         const filterTypes = [
-            { key: 'all',       icon: 'layout-grid',  labelEs: t('ev_filter_all'),       labelEn: t('ev_filter_all') },
-            { key: 'vocal',     icon: 'mic',           labelEs: t('ev_filter_vocal'),     labelEn: t('ev_filter_vocal') },
-            { key: 'tapping',   icon: 'hand',          labelEs: t('ev_filter_tapping'),   labelEn: t('ev_filter_tapping') },
-            { key: 'drawing',   icon: 'edit-3',        labelEs: t('ev_filter_drawing'),   labelEn: t('ev_filter_drawing') },
-            { key: 'breathing', icon: 'wind',          labelEs: t('ev_filter_breathing'), labelEn: t('ev_filter_breathing') },
+            { key: 'all', icon: 'layout-grid', labelEs: t('ev_filter_all'), labelEn: t('ev_filter_all') },
+            { key: 'vocal', icon: 'mic', labelEs: t('ev_filter_vocal'), labelEn: t('ev_filter_vocal') },
+            { key: 'tapping', icon: 'hand', labelEs: t('ev_filter_tapping'), labelEn: t('ev_filter_tapping') },
+            { key: 'drawing', icon: 'edit-3', labelEs: t('ev_filter_drawing'), labelEn: t('ev_filter_drawing') },
+            { key: 'breathing', icon: 'wind', labelEs: t('ev_filter_breathing'), labelEn: t('ev_filter_breathing') },
         ];
         const filterChips = `
         <div style="display:flex;gap:0.45rem;flex-wrap:wrap;margin-bottom:1rem;">
@@ -1831,12 +2147,12 @@ const views = {
             </h3>
             <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
                 ${summary.map(s => {
-                    const m = meta[s.type] || { icon: 'activity', color: '#00F2FF' };
-                    const trendLabel = s.trend === null ? '' :
-                        s.trend > 2  ? ` <span style="color:#10b981;">↑ ${isEs ? 'mejora' : 'improving'}</span>` :
-                        s.trend < -2 ? ` <span style="color:#ef4444;">↓ ${isEs ? 'atención' : 'attention'}</span>` :
-                                       ` <span style="color:#f59e0b;">→ ${isEs ? 'estable' : 'stable'}</span>`;
-                    return `<div style="flex:1;min-width:100px;padding:0.55rem 0.7rem;border-radius:14px;
+            const m = meta[s.type] || { icon: 'activity', color: '#00F2FF' };
+            const trendLabel = s.trend === null ? '' :
+                s.trend > 2 ? ` <span style="color:#10b981;">↑ ${isEs ? 'mejora' : 'improving'}</span>` :
+                    s.trend < -2 ? ` <span style="color:#ef4444;">↓ ${isEs ? 'atención' : 'attention'}</span>` :
+                        ` <span style="color:#f59e0b;">→ ${isEs ? 'estable' : 'stable'}</span>`;
+            return `<div style="flex:1;min-width:100px;padding:0.55rem 0.7rem;border-radius:14px;
                                         background:${m.color}10;border:1px solid ${m.color}22;">
                         <div style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.2rem;">
                             <i data-lucide="${m.icon}" style="width:12px;height:12px;color:${m.color};"></i>
@@ -1847,7 +2163,7 @@ const views = {
                         <div style="font-size:1.2rem;font-weight:900;color:${m.color};">${s.count}</div>
                         <div style="font-size:0.68rem;color:rgba(148,163,184,0.45);">${t('ev_sessions')}${trendLabel}</div>
                     </div>`;
-                }).join('')}
+        }).join('')}
             </div>
         </div>` : '';
 
@@ -1863,51 +2179,51 @@ const views = {
                </div>`
             : sessions.map(s => {
                 const m = meta[s.type] || { icon: 'activity', color: '#00F2FF', labelEs: s.type, labelEn: s.type };
-                const label    = isEs ? m.labelEs : m.labelEn;
-                const tsText   = window.NVHistory ? NVHistory.formatTs(s.ts, state.lang) : new Date(s.ts).toLocaleString();
-                const mx       = s.metrics || {};
-                const phase    = s.phase || 'ON';
+                const label = isEs ? m.labelEs : m.labelEn;
+                const tsText = window.NVHistory ? NVHistory.formatTs(s.ts, state.lang) : new Date(s.ts).toLocaleString();
+                const mx = s.metrics || {};
+                const phase = s.phase || 'ON';
                 const phaseCol = phase === 'ON' ? '#10b981' : '#ef4444';
 
                 let mainMetric = '';
                 if (s.type === 'tapping') {
-                    const jColor = (mx.jitter||0) < 25 ? '#10b981' : (mx.jitter||0) < 45 ? '#f59e0b' : '#ef4444';
+                    const jColor = (mx.jitter || 0) < 25 ? '#10b981' : (mx.jitter || 0) < 45 ? '#f59e0b' : '#ef4444';
                     mainMetric = `
                         <div class="nv-sc-metric-pill" style="border-color:${m.color}30;">
-                            <span style="color:${m.color};font-size:1.3rem;font-weight:900;">${mx.bpm||'–'}</span>
+                            <span style="color:${m.color};font-size:1.3rem;font-weight:900;">${mx.bpm || '–'}</span>
                             <span style="font-size:0.68rem;opacity:0.6;">BPM</span>
                         </div>
                         <div class="nv-sc-metric-pill" style="border-color:${jColor}30;">
-                            <span style="color:${jColor};font-size:1.3rem;font-weight:900;">${mx.jitter||'–'}%</span>
+                            <span style="color:${jColor};font-size:1.3rem;font-weight:900;">${mx.jitter || '–'}%</span>
                             <span style="font-size:0.68rem;opacity:0.6;">jitter</span>
                         </div>
                         <div class="nv-sc-metric-pill">
-                            <span style="color:rgba(148,163,184,0.7);font-size:1.1rem;font-weight:700;">${mx.count||'–'}</span>
+                            <span style="color:rgba(148,163,184,0.7);font-size:1.1rem;font-weight:700;">${mx.count || '–'}</span>
                             <span style="font-size:0.68rem;opacity:0.6;">${isEs ? 'toques' : 'taps'}</span>
                         </div>`;
                 } else if (s.type === 'drawing') {
-                    const sCol = (mx.stability||0) >= 70 ? '#10b981' : (mx.stability||0) >= 40 ? '#f59e0b' : '#ef4444';
+                    const sCol = (mx.stability || 0) >= 70 ? '#10b981' : (mx.stability || 0) >= 40 ? '#f59e0b' : '#ef4444';
                     mainMetric = `
                         <div class="nv-sc-metric-pill" style="border-color:${sCol}30;">
-                            <span style="color:${sCol};font-size:1.3rem;font-weight:900;">${mx.stability||'–'}%</span>
+                            <span style="color:${sCol};font-size:1.3rem;font-weight:900;">${mx.stability || '–'}%</span>
                             <span style="font-size:0.68rem;opacity:0.6;">${isEs ? 'Motor Stability' : 'Motor Stability'}</span>
                         </div>
                         <div class="nv-sc-metric-pill">
-                            <span style="color:rgba(148,163,184,0.7);font-size:1.1rem;font-weight:700;">${mx.density||'–'}%</span>
+                            <span style="color:rgba(148,163,184,0.7);font-size:1.1rem;font-weight:700;">${mx.density || '–'}%</span>
                             <span style="font-size:0.68rem;opacity:0.6;">${isEs ? 'densidad' : 'density'}</span>
                         </div>`;
                 } else if (s.type === 'vocal') {
-                    const sCol = (mx.stability||0) >= 85 ? '#10b981' : (mx.stability||0) >= 70 ? '#f59e0b' : '#ef4444';
+                    const sCol = (mx.stability || 0) >= 85 ? '#10b981' : (mx.stability || 0) >= 70 ? '#f59e0b' : '#ef4444';
                     mainMetric = `
                         <div class="nv-sc-metric-pill" style="border-color:${m.color}30;">
-                            <span style="color:${sCol};font-size:1.3rem;font-weight:900;">${mx.stability||'–'}%</span>
+                            <span style="color:${sCol};font-size:1.3rem;font-weight:900;">${mx.stability || '–'}%</span>
                             <span style="font-size:0.68rem;opacity:0.6;">${isEs ? 'estabilidad' : 'stability'}</span>
                         </div>
                         ${mx.duration ? `<div class="nv-sc-metric-pill"><span style="color:rgba(148,163,184,0.7);font-size:1.1rem;font-weight:700;">${mx.duration}s</span><span style="font-size:0.68rem;opacity:0.6;">${isEs ? 'duración' : 'duration'}</span></div>` : ''}`;
                 } else if (s.type === 'breathing') {
                     mainMetric = `
                         <div class="nv-sc-metric-pill" style="border-color:${m.color}30;">
-                            <span style="color:${m.color};font-size:1.3rem;font-weight:900;">${mx.cycles||'–'}</span>
+                            <span style="color:${m.color};font-size:1.3rem;font-weight:900;">${mx.cycles || '–'}</span>
                             <span style="font-size:0.68rem;opacity:0.6;">${isEs ? 'ciclos' : 'cycles'}</span>
                         </div>
                         ${mx.duration ? `<div class="nv-sc-metric-pill"><span style="color:rgba(148,163,184,0.7);font-size:1.1rem;font-weight:700;">${mx.duration}s</span><span style="font-size:0.68rem;opacity:0.6;">${isEs ? 'duración' : 'duration'}</span></div>` : ''}`;
@@ -1987,11 +2303,15 @@ function logAudit(action) {
     state.auditLog.unshift({ action, time: new Date().toLocaleTimeString() });
 }
 
-// ── Drag-and-drop handler (receives File directly) ──────────
-// No necesitamos DataTransfer — state._pendingFile guarda la referencia real.
-function handleDroppedFile(file) {
-    if (!file) return;
-    handleFileUpload({ files: [file] });
+// ── Drag-and-drop handler (receives FileList or File directly) ─
+function handleDroppedFile(fileOrList) {
+    if (!fileOrList) return;
+    // Accept both a FileList (from drop event) and a single File
+    if (fileOrList instanceof FileList) {
+        handleFileUpload(fileOrList.length ? { files: fileOrList } : null);
+    } else {
+        handleFileUpload(fileOrList); // single File — handled by instanceof File branch
+    }
 }
 
 // ── Análisis real de informes médicos (OCR + IA + Firestore) ─
@@ -2002,7 +2322,7 @@ async function runReportAnalysis() {
     // luego desde el input nativo (click). Ambos caminos convergen aquí.
     const fileInput = document.getElementById('file-upload-input');
     const file = state._pendingFile
-              || (fileInput && fileInput.files && fileInput.files[0]);
+        || (fileInput && fileInput.files && fileInput.files[0]);
     if (!file) {
         showToast(t('hlt_no_file'), 'error');
         return;
@@ -2048,23 +2368,23 @@ async function runReportAnalysis() {
 
         // 2. Construir objeto de informe
         const report = {
-            id:                    Date.now(),
-            date:                  new Date().toISOString().split('T')[0],
-            source:                file.name,
-            fileName:              file.name,
-            fileType:              file.type,
-            lang:                  state.lang,
+            id: Date.now(),
+            date: new Date().toISOString().split('T')[0],
+            source: file.name,
+            fileName: file.name,
+            fileType: file.type,
+            lang: state.lang,
             diagnostico_principal: analysis.diagnostico_principal,
-            medicacion_activa:     analysis.medicacion_activa,
-            recomendaciones:       analysis.recomendaciones,
-            metricas:              analysis.metricas    || {},
-            alertas:               analysis.alertas     || [],
-            dominios:              analysis.dominios    || {},
-            estadio:               analysis.estadio     || '',
-            isCritical:            analysis.isCritical  || false,
+            medicacion_activa: analysis.medicacion_activa,
+            recomendaciones: analysis.recomendaciones,
+            metricas: analysis.metricas || {},
+            alertas: analysis.alertas || [],
+            dominios: analysis.dominios || {},
+            estadio: analysis.estadio || '',
+            isCritical: analysis.isCritical || false,
             // Alias compat
-            diagnosis:  analysis.diagnostico_principal,
-            analysis:   analysis.recomendaciones,
+            diagnosis: analysis.diagnostico_principal,
+            analysis: analysis.recomendaciones,
             medicacion: analysis.medicacion_activa,
         };
         console.log('[NVReports] Informe generado:', report);
@@ -2085,10 +2405,10 @@ async function runReportAnalysis() {
 
         // 6. Actualizar resumen de perfil médico
         state.profileSummary.unshift({
-            date:      report.date,
+            date: report.date,
             diagnosis: report.diagnostico_principal,
-            body:      report.recomendaciones,
-            source:    report.source
+            body: report.recomendaciones,
+            source: report.source
         });
         localStorage.setItem('nv_prof_summary', JSON.stringify(state.profileSummary.slice(0, 20)));
 
@@ -2144,13 +2464,13 @@ function closeTapping() {
     logAudit(t('tap_saved'));
 
     const count = state.tappingData.timestamps.length;
-    const ivs   = state.tappingData.intervals;
+    const ivs = state.tappingData.intervals;
     const avgMs = ivs.length > 0 ? ivs.reduce((a, b) => a + b, 0) / ivs.length : 0;
 
     if (count > 0) {
-        const bpmVal  = avgMs > 0 ? Math.round(60000 / avgMs) : 0;
+        const bpmVal = avgMs > 0 ? Math.round(60000 / avgMs) : 0;
         const variance = avgMs > 0 ? ivs.reduce((s, v) => s + Math.pow(v - avgMs, 2), 0) / ivs.length : 0;
-        const jitter   = avgMs > 0 ? Math.round((Math.sqrt(variance) / avgMs) * 100) : 0;
+        const jitter = avgMs > 0 ? Math.round((Math.sqrt(variance) / avgMs) * 100) : 0;
         const duration = Math.round((avgMs * count) / 1000);
 
         // ── Guardar en historial ──
@@ -2231,7 +2551,7 @@ function closeMotriz() {
         const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
         let filled = 0;
         for (let i = 3; i < img.data.length; i += 4) if (img.data[i] > 10) filled++;
-        const density   = parseFloat(((filled / (canvas.width * canvas.height)) * 100).toFixed(1));
+        const density = parseFloat(((filled / (canvas.width * canvas.height)) * 100).toFixed(1));
         const stability = Math.min(100, Math.round(density * 60));
         logAudit(`Test Dibujo — Densidad: ${density}%`);
 
@@ -2260,17 +2580,19 @@ function initSpiral() {
     const getPos = (e) => {
         const r = canvas.getBoundingClientRect();
         const ev = e.touches ? e.touches[0] : e;
-        return { x: (ev.clientX - r.left) * (canvas.width / r.width),
-                 y: (ev.clientY - r.top)  * (canvas.height / r.height) };
+        return {
+            x: (ev.clientX - r.left) * (canvas.width / r.width),
+            y: (ev.clientY - r.top) * (canvas.height / r.height)
+        };
     };
     const start = (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); };
-    const move  = (e) => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
-    const stop  = () => { drawing = false; };
+    const move = (e) => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
+    const stop = () => { drawing = false; };
 
     canvas.onmousedown = start; canvas.onmousemove = move; canvas.onmouseup = stop; canvas.onmouseleave = stop;
     canvas.ontouchstart = (e) => { e.preventDefault(); start(e); };
-    canvas.ontouchmove  = (e) => { e.preventDefault(); move(e); };
-    canvas.ontouchend   = stop;
+    canvas.ontouchmove = (e) => { e.preventDefault(); move(e); };
+    canvas.ontouchend = stop;
 }
 
 // ============================================================
@@ -2294,12 +2616,12 @@ async function startVoiceRecording() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
         _micStream = stream;
-        _audioCtx  = new (window.AudioContext || window.webkitAudioContext)();
-        _analyser  = _audioCtx.createAnalyser();
+        _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        _analyser = _audioCtx.createAnalyser();
         _analyser.fftSize = 512;
         _audioCtx.createMediaStreamSource(stream).connect(_analyser);
-        state.isRecording    = true;
-        state._voiceStartTs  = Date.now();   // para calcular duración al guardar
+        state.isRecording = true;
+        state._voiceStartTs = Date.now();   // para calcular duración al guardar
         // Hook Módulo 3: análisis de prosodia
         if (window.NVVoiceInsights) NVVoiceInsights.onStart(_analyser);
 
@@ -2344,8 +2666,8 @@ function drawRealWaveform() {
 function stopVoiceRecording(silent = false) {
     if (!state.isRecording && !_micStream) return;
     if (_micStream) { _micStream.getTracks().forEach(t => t.stop()); _micStream = null; }
-    if (_rafId)   { cancelAnimationFrame(_rafId); _rafId = null; }
-    if (_audioCtx) { _audioCtx.close().catch(() => {}); _audioCtx = null; _analyser = null; }
+    if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
+    if (_audioCtx) { _audioCtx.close().catch(() => { }); _audioCtx = null; _analyser = null; }
     state.isRecording = false;
     const viz = document.getElementById('voice-viz');
     if (viz) viz.style.display = 'none';
@@ -2354,7 +2676,7 @@ function stopVoiceRecording(silent = false) {
     // Hook Módulo 3: finalizar análisis de prosodia
     if (window.NVVoiceInsights) NVVoiceInsights.onStop();
     if (!silent) {
-        const pct      = Math.floor(Math.random() * 15 + 82);
+        const pct = Math.floor(Math.random() * 15 + 82);
         const duration = state._voiceStartTs ? Math.round((Date.now() - state._voiceStartTs) / 1000) : 0;
         state._voiceStartTs = null;
 
@@ -2374,21 +2696,21 @@ function toggleVoiceRecording() {
 // RESPIRACIÓN GUIADA
 // ============================================================
 function startResp() {
-    const isEs     = state.lang === 'es';
-    const startTs  = Date.now();
+    const isEs = state.lang === 'es';
+    const startTs = Date.now();
     showMedicalTip(
         isEs ? 'La respiración diafragmática reduce la rigidez muscular y mejora la oxigenación cerebral.'
-             : 'Diaphragmatic breathing reduces muscle rigidity and improves brain oxygenation.',
+            : 'Diaphragmatic breathing reduces muscle rigidity and improves brain oxygenation.',
         () => showModal(
             isEs ? 'Inspirar 4 seg...\nMantener 2 seg...\nExpirar 6 seg.\n\nSiga el ritmo visual y repita el ciclo.'
-                 : 'Inhale 4 sec...\nHold 2 sec...\nExhale 6 sec.\n\nFollow the visual rhythm and repeat.',
+                : 'Inhale 4 sec...\nHold 2 sec...\nExhale 6 sec.\n\nFollow the visual rhythm and repeat.',
             {
-                title:       isEs ? 'Respiración Guiada' : 'Guided Breathing',
-                confirmText: isEs ? 'Completado ✓'       : 'Completed ✓',
-                cancelText:  isEs ? 'Cerrar'             : 'Close',
+                title: isEs ? 'Respiración Guiada' : 'Guided Breathing',
+                confirmText: isEs ? 'Completado ✓' : 'Completed ✓',
+                cancelText: isEs ? 'Cerrar' : 'Close',
                 onConfirm: () => {
                     const duration = Math.round((Date.now() - startTs) / 1000);
-                    const cycles   = Math.max(1, Math.floor(duration / 12));
+                    const cycles = Math.max(1, Math.floor(duration / 12));
                     // ── Guardar en historial ──
                     if (window.NVHistory) NVHistory.save('breathing', { cycles, duration });
                 }
@@ -2409,15 +2731,13 @@ function toggleMetronome() {
 function startMetronome() {
     state.metronomeActive = true;
     _metBeat = 0;
-    _metCtx  = new (window.AudioContext || window.webkitAudioContext)();
+    _metCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     // Master gain — controlable desde modo rescate
     _metGain = _metCtx.createGain();
     _metGain.gain.value = 0.78;
     _metGain.connect(_metCtx.destination);
 
-    // Audio ducking: bajar música de Spotify cuando metrónomo arranca
-    if (window.NVSpotify && NVSpotify.isConnected()) NVSpotify.duck(true);
 
     const btn = document.getElementById('ras-btn');
     if (btn) btn.innerHTML = `<i data-lucide="square"></i> ${t('ras_stop')}`;
@@ -2433,7 +2753,7 @@ function startMetronome() {
         if (!state.metronomeActive) return;
         _metBeat++;
 
-        const t0  = _metCtx.currentTime;
+        const t0 = _metCtx.currentTime;
         const vol = _metGain ? _metGain.gain.value : 0.78;
 
         // ── KICK DRUM SINTÉTICO ─────────────────────────────
@@ -2487,11 +2807,9 @@ function startMetronome() {
 function stopMetronome() {
     state.metronomeActive = false;
     if (_metTimeout) { clearTimeout(_metTimeout); _metTimeout = null; }
-    if (_metCtx)     { _metCtx.close().catch(() => {}); _metCtx = null; }
+    if (_metCtx) { _metCtx.close().catch(() => { }); _metCtx = null; }
     _metGain = null;
     _metBeat = 0;
-    // Restaurar volumen de Spotify cuando se detiene el metrónomo
-    if (window.NVSpotify && NVSpotify.isConnected()) NVSpotify.duck(false);
     const btn = document.getElementById('ras-btn');
     if (btn) btn.innerHTML = `<i data-lucide="play"></i> ${t('ras_start')}`;
     lucide.createIcons();
@@ -2509,7 +2827,7 @@ function updateMetronomeBPM(val) {
         if (!btn) return;
         const active = bpm === state.metronomeBPM;
         btn.style.borderColor = active ? 'var(--primary-green)' : 'rgba(255,255,255,0.09)';
-        btn.style.color       = active ? 'var(--primary-green)' : 'rgba(241,245,249,0.6)';
+        btn.style.color = active ? 'var(--primary-green)' : 'rgba(241,245,249,0.6)';
     });
     if (state.metronomeActive) { stopMetronome(); startMetronome(); }
 }
@@ -2538,100 +2856,317 @@ function _spawnRipple() {
 // MUSICOTERAPIA — Handlers de Spotify (llamados desde la vista RAS)
 // ============================================================
 
-function spotifyTogglePlay() {
-    if (window.NVSpotify) NVSpotify.togglePlay();
+// ── MUSICOTERAPIA YOUTUBE ────────────────────────────────────
+// Búsquedas curadas para terapia de Parkinson — se abren en YouTube
+const _ytSearches = [
+    { q: 'parkinson music therapy 100 bpm walking steady tempo gait training' },
+    { q: 'parkinson gait training music 110 bpm neurologic rehabilitation steady beat' },
+    { q: 'parkinson rehabilitation music 120 bpm neurologic music therapy cadence' },
+    { q: 'parkinson relaxation music calm therapy classical soothing' },
+];
+
+function ytSearch(idx) {
+    const s = _ytSearches[idx];
+    if (!s) return;
+    window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(s.q), '_blank', 'noopener');
 }
 
-function spotifyNext() {
-    if (window.NVSpotify) NVSpotify.nextTrack();
+// ── HISTORIAL PERSISTENTE ─────────────────────────────────────
+let _ytHistory = [];
+(function _ytLoadHistory() {
+    try { _ytHistory = JSON.parse(localStorage.getItem('nv_yt_history') || '[]'); } catch { _ytHistory = []; }
+})();
+
+// ── Detecta la plataforma de una URL ─────────────────────────
+function _mediaPlatform(raw) {
+    if (/youtu(\.be|be\.com)/.test(raw))        return 'youtube';
+    if (/vimeo\.com/.test(raw))                 return 'vimeo';
+    if (/dailymotion\.com/.test(raw))           return 'dailymotion';
+    if (/soundcloud\.com/.test(raw))            return 'soundcloud';
+    if (/open\.spotify\.com/.test(raw))         return 'spotify';
+    if (/twitch\.tv/.test(raw))                 return 'twitch';
+    if (/music\.apple\.com/.test(raw))          return 'apple';
+    return 'unknown';
 }
 
-function spotifyPrev() {
-    if (window.NVSpotify) NVSpotify.prevTrack();
+function _ytBuildEmbed(raw) {
+    const p = _mediaPlatform(raw);
+
+    // ── YouTube ──────────────────────────────────────────────
+    if (p === 'youtube') {
+        const list = raw.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+        if (list) return 'https://www.youtube.com/embed/videoseries?list=' + list[1] + '&autoplay=1&rel=0&modestbranding=1';
+        const vid = raw.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+        if (vid) return 'https://www.youtube.com/embed/' + vid[1] + '?autoplay=1&rel=0&modestbranding=1';
+    }
+
+    // ── Vimeo ────────────────────────────────────────────────
+    if (p === 'vimeo') {
+        const m = raw.match(/vimeo\.com\/(\d+)/);
+        if (m) return 'https://player.vimeo.com/video/' + m[1] + '?autoplay=1&color=00F2FF&title=0&byline=0';
+    }
+
+    // ── Dailymotion ──────────────────────────────────────────
+    if (p === 'dailymotion') {
+        const m = raw.match(/dailymotion\.com\/video\/([a-zA-Z0-9]+)/);
+        if (m) return 'https://www.dailymotion.com/embed/video/' + m[1] + '?autoplay=1';
+    }
+
+    // ── SoundCloud ───────────────────────────────────────────
+    if (p === 'soundcloud') {
+        return 'https://w.soundcloud.com/player/?url=' + encodeURIComponent(raw) +
+               '&auto_play=true&color=%2300F2FF&buying=false&sharing=false&download=false&show_artwork=true';
+    }
+
+    // ── Spotify ──────────────────────────────────────────────
+    if (p === 'spotify') {
+        const m = raw.match(/open\.spotify\.com\/(track|album|playlist|episode|show)\/([a-zA-Z0-9]+)/);
+        if (m) return 'https://open.spotify.com/embed/' + m[1] + '/' + m[2] + '?utm_source=generator&theme=0';
+    }
+
+    // ── Twitch ───────────────────────────────────────────────
+    if (p === 'twitch') {
+        const ch = raw.match(/twitch\.tv\/([a-zA-Z0-9_]+)/);
+        if (ch && !/clip|videos/.test(raw))
+            return 'https://player.twitch.tv/?channel=' + ch[1] + '&parent=' + location.hostname + '&autoplay=true';
+        const clip = raw.match(/clip\/([a-zA-Z0-9_-]+)/);
+        if (clip) return 'https://clips.twitch.tv/embed?clip=' + clip[1] + '&parent=' + location.hostname;
+    }
+
+    // ── Apple Music ──────────────────────────────────────────
+    if (p === 'apple') {
+        return raw.replace('music.apple.com', 'embed.music.apple.com');
+    }
+
+    return '';
 }
 
-function spotifyPickPlaylist(id, bpm) {
-    if (!window.NVSpotify) return;
-    NVSpotify.playPlaylist(id);
-    // Sincronizar slider de BPM con el tempo de la playlist
-    rasSetPreset(bpm);
+function _ytIcon(raw) {
+    const icons = { youtube:'🎬', vimeo:'🎥', dailymotion:'📹', soundcloud:'🎵', spotify:'🎧', twitch:'🎮', apple:'🎵' };
+    return (icons[_mediaPlatform(raw)] || '▶') + ' ';
 }
 
-// Modal de consentimiento GDPR/HIPAA/CCPA antes de OAuth
-function showSpotifyConsent() {
-    const isEs = state.lang === 'es';
+function _ytLabel(raw) {
+    const p = _mediaPlatform(raw);
+    const names = { youtube:'YouTube', vimeo:'Vimeo', dailymotion:'Dailymotion', soundcloud:'SoundCloud', spotify:'Spotify', twitch:'Twitch', apple:'Apple Music' };
+    const platformName = names[p] || 'Media';
 
-    // Si ya está conectado → desconectar
-    if (window.NVSpotify && NVSpotify.isConnected()) {
-        if (confirm(isEs
-            ? '¿Deseas desconectar Spotify de NeuroVida?'
-            : 'Do you want to disconnect Spotify from NeuroVida?')) {
-            NVSpotify.disconnect();
-        }
+    if (p === 'youtube') {
+        const list = raw.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+        if (list) return '🎵 YouTube Playlist · ' + list[1].slice(0, 14) + (list[1].length > 14 ? '…' : '');
+        const vid = raw.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+        if (vid) return '🎬 YouTube · ' + vid[1];
+    }
+    if (p === 'spotify') {
+        const m = raw.match(/open\.spotify\.com\/(track|album|playlist|episode|show)\/([a-zA-Z0-9]+)/);
+        if (m) return '🎧 Spotify ' + m[1] + ' · ' + m[2].slice(0, 10) + '…';
+    }
+    return _ytIcon(raw) + platformName + ' · ' + raw.replace(/^https?:\/\//, '').slice(0, 28) + '…';
+}
+
+// Obtiene el título real vía oEmbed cuando esté disponible (sin API key)
+async function _ytFetchTitle(raw) {
+    try {
+        const p = _mediaPlatform(raw);
+        let oembedUrl = '';
+        if (p === 'youtube')
+            oembedUrl = 'https://www.youtube.com/oembed?url=' + encodeURIComponent(raw) + '&format=json';
+        else if (p === 'vimeo')
+            oembedUrl = 'https://vimeo.com/api/oembed.json?url=' + encodeURIComponent(raw);
+        else if (p === 'soundcloud')
+            oembedUrl = 'https://soundcloud.com/oembed?url=' + encodeURIComponent(raw) + '&format=json';
+        else if (p === 'dailymotion')
+            oembedUrl = 'https://www.dailymotion.com/services/oembed?url=' + encodeURIComponent(raw) + '&format=json';
+        else return null;
+
+        const res = await fetch(oembedUrl);
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.title || null;
+    } catch { return null; }
+}
+
+function _ytSaveHistory(raw, embedUrl, customName) {
+    // Evitar duplicados — si ya existe, moverlo al frente
+    _ytHistory = _ytHistory.filter(h => h.raw !== raw);
+    const item = { raw, embed: embedUrl, label: _ytLabel(raw), name: customName || '', ts: Date.now() };
+    _ytHistory.unshift(item);
+    if (_ytHistory.length > 20) _ytHistory.length = 20;
+    try { localStorage.setItem('nv_yt_history', JSON.stringify(_ytHistory)); } catch { }
+
+    // Obtener título real en background — solo si no hay nombre personalizado
+    _ytFetchTitle(raw).then(title => {
+        if (!title || item.name) return;
+        item.label = _ytIcon(raw) + title;
+        try { localStorage.setItem('nv_yt_history', JSON.stringify(_ytHistory)); } catch { }
+        ytRenderHistory();
+    });
+}
+
+function ytLoad(rawOverride) {
+    const inp     = document.getElementById('yt-url-inp');
+    const nameInp = document.getElementById('yt-name-inp');
+    const raw     = rawOverride || (inp ? inp.value.trim() : '');
+    const customName = (!rawOverride && nameInp) ? nameInp.value.trim() : '';
+    if (!raw) return;
+
+    const embedUrl = _ytBuildEmbed(raw);
+    if (!embedUrl) {
+        _showToast(state.lang === 'es'
+            ? 'URL no compatible — prueba con YouTube, Vimeo, Spotify, SoundCloud o Dailymotion'
+            : 'URL not supported — try YouTube, Vimeo, Spotify, SoundCloud or Dailymotion', 'warn');
         return;
     }
 
-    // Crear modal de consentimiento
-    const overlay = document.createElement('div');
-    overlay.id = 'sp-consent-overlay';
-    overlay.style.cssText = [
-        'position:fixed','inset:0','z-index:5000',
-        'background:rgba(0,0,0,0.72)','display:flex',
-        'align-items:center','justify-content:center','padding:1rem',
+    const frame = document.getElementById('yt-frame');
+    const wrap = document.getElementById('yt-wrap');
+    const hint = document.getElementById('yt-hint');
+    const stopWrap = document.getElementById('yt-stop-wrap');
+    if (!frame || !wrap) return;
+
+    frame.src = embedUrl;
+    wrap.style.display = 'block';
+    if (stopWrap) stopWrap.style.display = 'block';
+    if (hint) hint.style.display = 'none';
+    if (inp && !rawOverride) inp.value = '';
+    if (nameInp && !rawOverride) nameInp.value = '';
+
+    _ytSaveHistory(raw, embedUrl, customName);
+    ytRenderHistory();
+}
+
+function ytStop() {
+    const frame = document.getElementById('yt-frame');
+    const wrap = document.getElementById('yt-wrap');
+    const hint = document.getElementById('yt-hint');
+    const stopWrap = document.getElementById('yt-stop-wrap');
+    if (frame) frame.src = 'about:blank';
+    if (wrap) wrap.style.display = 'none';
+    if (stopWrap) stopWrap.style.display = 'none';
+    if (hint) hint.style.display = '';
+}
+
+function ytPlayHistoryItem(idx) {
+    const item = _ytHistory[idx];
+    if (!item) return;
+    ytLoad(item.raw);
+}
+
+function ytRenameHistoryItem(idx) {
+    const item = _ytHistory[idx];
+    if (!item) return;
+    const wrap = document.getElementById('yt-history-wrap');
+    if (!wrap) return;
+    const labelEl = wrap.querySelector(`[data-yt-idx="${idx}"]`);
+    if (!labelEl) return;
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = item.name || item.label || '';
+    input.maxLength = 60;
+    input.style.cssText = [
+        'flex:1', 'background:rgba(10,15,30,0.7)', 'border:1px solid rgba(0,242,255,0.4)',
+        'color:#f1f5f9', 'border-radius:6px', 'padding:0.2rem 0.5rem',
+        'font-size:0.79rem', 'outline:none', 'min-width:0'
     ].join(';');
 
-    overlay.innerHTML = `
-        <div style="
-            background:var(--card-bg);
-            border:1px solid rgba(29,185,84,0.35);
-            border-radius:22px;
-            padding:1.8rem 1.5rem;
-            max-width:480px;
-            width:100%;
-            max-height:88vh;
-            overflow-y:auto;
-            box-shadow:0 30px 80px rgba(0,0,0,0.7);
-        ">
-            <h2 style="
-                font-family:var(--font-accent);
-                color:#1DB954;
-                margin-bottom:1.2rem;
-                font-size:1.15rem;
-            ">${t('sp_consent_title')}</h2>
-
-            <div style="
-                font-size:0.86rem;
-                line-height:1.75;
-                color:rgba(241,245,249,0.88);
-                margin-bottom:1.5rem;
-                white-space:pre-line;
-                background:rgba(29,185,84,0.05);
-                border-left:3px solid rgba(29,185,84,0.5);
-                padding:1rem;
-                border-radius:10px;
-            ">${t('sp_consent_body')}</div>
-
-            <div style="display:flex;flex-direction:column;gap:0.7rem;">
-                <button class="action-btn btn-primary"
-                        style="width:100%;background:linear-gradient(135deg,#1DB954,#17a34a);
-                               border:none;font-size:0.95rem;"
-                        onclick="document.getElementById('sp-consent-overlay').remove();
-                                 if(window.NVSpotify) NVSpotify.connect();">
-                    ${t('sp_consent_accept')}
-                </button>
-                <button class="action-btn"
-                        style="width:100%;border:1px solid rgba(255,255,255,0.1);
-                               color:rgba(148,163,184,0.8);"
-                        onclick="document.getElementById('sp-consent-overlay').remove();">
-                    ${t('sp_consent_cancel')}
-                </button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) overlay.remove();
+    const save = () => {
+        item.name = input.value.trim();
+        try { localStorage.setItem('nv_yt_history', JSON.stringify(_ytHistory)); } catch { }
+        ytRenderHistory();
+    };
+    input.addEventListener('blur', save);
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Enter')  { e.preventDefault(); save(); }
+        if (e.key === 'Escape') { ytRenderHistory(); }
     });
+
+    labelEl.replaceWith(input);
+    input.focus();
+    input.select();
+}
+
+function ytDeleteHistoryItem(idx) {
+    _ytHistory.splice(idx, 1);
+    try { localStorage.setItem('nv_yt_history', JSON.stringify(_ytHistory)); } catch { }
+    ytRenderHistory();
+}
+
+function ytClearHistory() {
+    if (!confirm(state.lang === 'es' ? '¿Limpiar todo el historial?' : 'Clear all history?')) return;
+    _ytHistory = [];
+    try { localStorage.removeItem('nv_yt_history'); } catch { }
+    ytRenderHistory();
+}
+
+function ytRenderHistory() {
+    const wrap = document.getElementById('yt-history-wrap');
+    if (!wrap) return;
+    const isEs = state.lang === 'es';
+
+    if (!_ytHistory.length) {
+        wrap.innerHTML = `
+            <p style="font-size:0.72rem;color:rgba(148,163,184,0.35);text-align:center;
+                      margin:0.2rem 0 0;padding:0.5rem;">
+                ${isEs ? t('yt_no_saved') : t('yt_no_saved')}
+            </p>`;
+        return;
+    }
+
+    const items = _ytHistory.map((h, i) => `
+        <div style="display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.75rem;
+                    border-radius:12px;background:rgba(255,255,255,0.03);
+                    border:1px solid rgba(255,255,255,0.07);margin-bottom:0.45rem;
+                    transition:background 0.18s;"
+             onmouseover="this.style.background='rgba(255,255,255,0.06)'"
+             onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+            <button onclick="ytPlayHistoryItem(${i})"
+                    title="${isEs ? 'Reproducir' : 'Play'}"
+                    style="width:34px;height:34px;min-width:34px;border-radius:50%;border:none;
+                           background:rgba(255,0,0,0.15);color:#ff5555;cursor:pointer;
+                           display:flex;align-items:center;justify-content:center;font-size:0.9rem;
+                           transition:background 0.15s;flex-shrink:0;"
+                    onmouseover="this.style.background='rgba(255,0,0,0.3)'"
+                    onmouseout="this.style.background='rgba(255,0,0,0.15)'">▶</button>
+            <span data-yt-idx="${i}"
+                  style="flex:1;font-size:0.79rem;color:rgba(241,245,249,0.82);
+                         white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+                         cursor:pointer;" onclick="ytPlayHistoryItem(${i})">
+                ${h.name || h.label}
+            </span>
+            <button onclick="ytRenameHistoryItem(${i})"
+                    title="${isEs ? 'Renombrar' : 'Rename'}"
+                    style="width:30px;height:30px;min-width:30px;border-radius:8px;border:none;
+                           background:transparent;color:rgba(148,163,184,0.3);cursor:pointer;
+                           font-size:0.85rem;display:flex;align-items:center;justify-content:center;
+                           transition:color 0.15s,background 0.15s;flex-shrink:0;"
+                    onmouseover="this.style.color='rgba(0,242,255,0.7)';this.style.background='rgba(0,242,255,0.08)'"
+                    onmouseout="this.style.color='rgba(148,163,184,0.3)';this.style.background='transparent'">✏</button>
+            <button onclick="ytDeleteHistoryItem(${i})"
+                    title="${isEs ? 'Eliminar' : 'Remove'}"
+                    style="width:30px;height:30px;min-width:30px;border-radius:8px;border:none;
+                           background:transparent;color:rgba(148,163,184,0.4);cursor:pointer;
+                           font-size:1rem;display:flex;align-items:center;justify-content:center;
+                           transition:color 0.15s,background 0.15s;flex-shrink:0;"
+                    onmouseover="this.style.color='rgba(239,68,68,0.8)';this.style.background='rgba(239,68,68,0.1)'"
+                    onmouseout="this.style.color='rgba(148,163,184,0.4)';this.style.background='transparent'">✕</button>
+        </div>`).join('');
+
+    wrap.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;
+                    margin-bottom:0.55rem;">
+            <p style="font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;
+                      color:rgba(148,163,184,0.5);margin:0;">
+                ${t('yt_saved')} (${_ytHistory.length})
+            </p>
+            <button onclick="ytClearHistory()"
+                    style="font-size:0.68rem;color:rgba(148,163,184,0.4);background:none;
+                           border:none;cursor:pointer;padding:0.2rem 0.4rem;border-radius:6px;
+                           transition:color 0.15s;"
+                    onmouseover="this.style.color='rgba(239,68,68,0.7)'"
+                    onmouseout="this.style.color='rgba(148,163,184,0.4)'">${t('yt_clear_all')}</button>
+        </div>
+        ${items}`;
 }
 
 // API pública para que nv-freezing.js pueda escalar el volumen
@@ -2647,14 +3182,14 @@ window.NVMetronome = {
 function showMedicalTip(msg, callback) {
     const tip = document.createElement('div');
     tip.style.cssText = [
-        'position:fixed','top:90px','left:50%','transform:translateX(-50%)',
-        'background:#161B2D','color:#00F2FF',
+        'position:fixed', 'top:90px', 'left:50%', 'transform:translateX(-50%)',
+        'background:#161B2D', 'color:#00F2FF',
         'border:1px solid rgba(0,242,255,0.3)',
-        'padding:0.8rem 1.4rem','border-radius:16px',
-        'z-index:9999','font-size:0.82rem',
-        'max-width:300px','text-align:center',
+        'padding:0.8rem 1.4rem', 'border-radius:16px',
+        'z-index:9999', 'font-size:0.82rem',
+        'max-width:300px', 'text-align:center',
         'box-shadow:0 10px 30px rgba(0,0,0,0.6)',
-        'line-height:1.5','pointer-events:none','transition:opacity 0.5s'
+        'line-height:1.5', 'pointer-events:none', 'transition:opacity 0.5s'
     ].join(';');
     tip.innerHTML = `<strong style="display:block;margin-bottom:4px;color:#8B5CF6;">ℹ ${state.lang === 'es' ? 'Beneficio médico' : 'Medical benefit'}</strong>${msg}`;
     document.body.appendChild(tip);
@@ -2666,8 +3201,8 @@ function showMedicalTip(msg, callback) {
 // EXPORTAR PDF CLÍNICO
 // ============================================================
 function exportPDF() {
-    const name  = state.user ? state.user.name : 'Paciente';
-    const today = new Date().toLocaleDateString(state.lang === 'es' ? 'es-ES' : 'en-US', { year:'numeric', month:'long', day:'numeric' });
+    const name = state.user ? state.user.name : 'Paciente';
+    const today = new Date().toLocaleDateString(state.lang === 'es' ? 'es-ES' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     const tapCount = state.tappingData.timestamps.length;
     const avgMs = state.tappingData.intervals.length > 0
         ? Math.round(state.tappingData.intervals.reduce((a, b) => a + b, 0) / state.tappingData.intervals.length) : 0;
@@ -2708,10 +3243,10 @@ function exportPDF() {
         </div>
       </div>
       ${(() => {
-        const lastReport = state.medicalReports[0];
-        if (!lastReport) return '';
-        const isEs = state.lang === 'es';
-        return `
+            const lastReport = state.medicalReports[0];
+            if (!lastReport) return '';
+            const isEs = state.lang === 'es';
+            return `
         <div style="border:1px solid #e2e8f0;border-radius:10px;padding:18px;margin-bottom:22px;">
           <div style="font-weight:700;font-size:11px;color:#64748b;margin-bottom:14px;text-transform:uppercase;">🧠 ${isEs ? 'Último Informe Médico — Análisis IA' : 'Last Medical Report — AI Analysis'}</div>
           <div style="border-left:3px solid #3b82f6;padding:10px 14px;background:#f8fafc;border-radius:0 6px 6px 0;">
@@ -2734,32 +3269,32 @@ function exportPDF() {
             </div>
           </div>
         </div>`;
-      })()}
+        })()}
       ${(() => {
-        const sessions = window.NVHistory ? NVHistory.getAll().slice(0, 5) : [];
-        if (!sessions.length) return '';
-        const isEs = state.lang === 'es';
-        const typeLabel = { tapping: isEs ? 'Temblor' : 'Tremor', drawing: isEs ? 'Dibujo' : 'Drawing', vocal: isEs ? 'Vocal' : 'Vocal', breathing: isEs ? 'Respiración' : 'Breathing' };
-        return `
+            const sessions = window.NVHistory ? NVHistory.getAll().slice(0, 5) : [];
+            if (!sessions.length) return '';
+            const isEs = state.lang === 'es';
+            const typeLabel = { tapping: isEs ? 'Temblor' : 'Tremor', drawing: isEs ? 'Dibujo' : 'Drawing', vocal: isEs ? 'Vocal' : 'Vocal', breathing: isEs ? 'Respiración' : 'Breathing' };
+            return `
         <div style="border:1px solid #e2e8f0;border-radius:10px;padding:18px;margin-bottom:22px;">
           <div style="font-weight:700;font-size:11px;color:#64748b;margin-bottom:14px;text-transform:uppercase;">📈 ${isEs ? 'Últimas Sesiones de Rehabilitación' : 'Latest Rehabilitation Sessions'}</div>
           ${sessions.map(s => {
-            const m = s.metrics || {};
-            const label = typeLabel[s.type] || s.type;
-            const dateStr = new Date(s.ts).toLocaleDateString(isEs ? 'es-ES' : 'en-US');
-            let metric = '';
-            if (s.type === 'tapping')   metric = `${m.bpm || '—'} BPM · Jitter ${m.jitter || '—'}%`;
-            if (s.type === 'drawing')   metric = `${isEs ? 'Estabilidad' : 'Stability'} ${m.stability || '—'}%`;
-            if (s.type === 'vocal')     metric = `${isEs ? 'Estabilidad' : 'Stability'} ${m.stability || '—'}%`;
-            if (s.type === 'breathing') metric = `${m.cycles || '—'} ${isEs ? 'ciclos' : 'cycles'} · ${m.duration || '—'}s`;
-            return `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:12px;">
+                const m = s.metrics || {};
+                const label = typeLabel[s.type] || s.type;
+                const dateStr = new Date(s.ts).toLocaleDateString(isEs ? 'es-ES' : 'en-US');
+                let metric = '';
+                if (s.type === 'tapping') metric = `${m.bpm || '—'} BPM · Jitter ${m.jitter || '—'}%`;
+                if (s.type === 'drawing') metric = `${isEs ? 'Estabilidad' : 'Stability'} ${m.stability || '—'}%`;
+                if (s.type === 'vocal') metric = `${isEs ? 'Estabilidad' : 'Stability'} ${m.stability || '—'}%`;
+                if (s.type === 'breathing') metric = `${m.cycles || '—'} ${isEs ? 'ciclos' : 'cycles'} · ${m.duration || '—'}s`;
+                return `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:12px;">
               <span><strong>${label}</strong> <span style="color:#94a3b8;">· FASE ${s.phase || 'ON'}</span></span>
               <span style="color:#475569;">${metric}</span>
               <span style="color:#94a3b8;font-size:11px;">${dateStr}</span>
             </div>`;
-          }).join('')}
+            }).join('')}
         </div>`;
-      })()}
+        })()}
       <div style="border:1px solid #e2e8f0;border-radius:10px;padding:18px;margin-bottom:22px;">
         <div style="font-weight:700;font-size:11px;color:#64748b;margin-bottom:14px;text-transform:uppercase;">💊 ${state.lang === 'es' ? 'Medicación' : 'Medication'}</div>
         ${state.medications.map(m => `
@@ -2783,7 +3318,7 @@ function exportPDF() {
     document.body.appendChild(container);
     html2pdf().set({
         margin: [8, 8],
-        filename: `NeuroVida_${name.replace(/\s/g,'_')}_${new Date().toISOString().split('T')[0]}.pdf`,
+        filename: `NeuroVida_${name.replace(/\s/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
         image: { type: 'jpeg', quality: 0.97 },
         html2canvas: { scale: 2, useCORS: true, logging: false },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -2831,6 +3366,115 @@ function _attachSOS(btn) {
     btn.addEventListener('touchcancel', cancel);
 }
 
+// ── Número oficial de emergencias según país del paciente ─────
+function _getEmergencyNumber(country) {
+    const c = (country || '').toLowerCase().trim();
+    if (/españa|spain|es\b/.test(c))            return { num: '112',  label: 'España — 112' };
+    if (/australia/.test(c))                     return { num: '000',  label: 'Australia — 000' };
+    if (/uk|united kingdom|reino unido/.test(c)) return { num: '999',  label: 'UK — 999' };
+    if (/canada|canadá/.test(c))                 return { num: '911',  label: 'Canada — 911' };
+    if (/usa|united states|estados unidos/.test(c)) return { num: '911', label: 'USA — 911' };
+    return { num: '112 / 911', label: 'Internacional — 112 / 911' };
+}
+
+function secEditContact(n) {
+    const nameInp  = document.getElementById(`sec-ec${n}-name`);
+    const phoneInp = document.getElementById(`sec-ec${n}-phone`);
+    const editBtn  = document.getElementById(`sec-ec${n}-edit-btn`);
+    const saveBtn  = document.getElementById(`sec-ec${n}-save-btn`);
+    const row      = document.getElementById(`sec-ec${n}-row`);
+    if (!nameInp || !phoneInp) return;
+
+    // Activar edición
+    [nameInp, phoneInp].forEach(inp => {
+        inp.removeAttribute('readonly');
+        inp.style.background   = 'rgba(10,15,30,0.7)';
+        inp.style.border       = '1px solid rgba(0,242,255,0.35)';
+        inp.style.color        = 'rgba(241,245,249,0.95)';
+        inp.style.cursor       = 'text';
+        inp.style.borderRadius = '8px';
+    });
+    if (row)     row.style.borderColor = 'rgba(0,242,255,0.25)';
+    if (editBtn) editBtn.style.display = 'none';
+    if (saveBtn) saveBtn.style.display = 'flex';
+
+    // Quitar onclick que dispara secEditContact (ya estamos en modo edición)
+    nameInp.removeAttribute('onclick');
+    phoneInp.removeAttribute('onclick');
+    nameInp.style.cursor  = 'text';
+    phoneInp.style.cursor = 'text';
+    nameInp.focus();
+}
+
+function secSaveContact(n) {
+    const nameInp  = document.getElementById(`sec-ec${n}-name`);
+    const phoneInp = document.getElementById(`sec-ec${n}-phone`);
+    const editBtn  = document.getElementById(`sec-ec${n}-edit-btn`);
+    const saveBtn  = document.getElementById(`sec-ec${n}-save-btn`);
+    const row      = document.getElementById(`sec-ec${n}-row`);
+    if (!nameInp || !phoneInp) return;
+
+    const name  = nameInp.value.trim();
+    const phone = phoneInp.value.trim();
+    const hasData = name || phone;
+
+    // Guardar en estado
+    const u = state.user || {};
+    u[`ec${n}`] = { name, phone };
+    state.user = u;
+    nvSaveUser(u);
+
+    // Volver a modo lectura
+    [nameInp, phoneInp].forEach(inp => {
+        inp.setAttribute('readonly', '');
+        inp.setAttribute('onclick', `secEditContact(${n})`);
+        inp.style.background   = 'transparent';
+        inp.style.border       = '1px solid transparent';
+        inp.style.color        = hasData ? 'rgba(241,245,249,0.85)' : 'rgba(148,163,184,0.35)';
+        inp.style.cursor       = 'pointer';
+    });
+    if (row)     row.style.borderColor = 'rgba(255,255,255,0.07)';
+    if (editBtn) editBtn.style.display = 'flex';
+    if (saveBtn) saveBtn.style.display = 'none';
+
+    // Actualizar botón de llamada con el nuevo teléfono
+    const callEl = document.getElementById(`sec-ec${n}-call-btn`);
+    if (callEl) {
+        if (phone) {
+            const a = document.createElement('a');
+            a.id   = `sec-ec${n}-call-btn`;
+            a.href = `tel:${phone.replace(/\s/g, '')}`;
+            a.title = state.lang === 'es' ? 'Llamar' : 'Call';
+            a.style.cssText = 'width:30px;height:30px;border:none;border-radius:8px;cursor:pointer;' +
+                'background:rgba(16,185,129,0.12);color:rgba(16,185,129,0.7);' +
+                'display:flex;align-items:center;justify-content:center;' +
+                'text-decoration:none;transition:color 0.18s,background 0.18s;';
+            a.onmouseover = () => { a.style.color = 'rgba(16,185,129,1)'; a.style.background = 'rgba(16,185,129,0.25)'; };
+            a.onmouseout  = () => { a.style.color = 'rgba(16,185,129,0.7)'; a.style.background = 'rgba(16,185,129,0.12)'; };
+            a.innerHTML = '<i data-lucide="phone-call" style="width:14px;height:14px;pointer-events:none;"></i>';
+            callEl.replaceWith(a);
+        } else {
+            callEl.style.color = 'rgba(148,163,184,0.2)';
+            callEl.style.background = 'rgba(255,255,255,0.03)';
+            callEl.removeAttribute('href');
+        }
+    }
+    lucide.createIcons();
+
+    showToast(t('sec_contacts_saved'), 'success');
+}
+
+function saveEmergencyContacts() {
+    const u = state.user || {};
+    const v = (id) => (document.getElementById(id)?.value || '').trim();
+    u.ec1 = { name: v('sec-ec1-name'), phone: v('sec-ec1-phone') };
+    u.ec2 = { name: v('sec-ec2-name'), phone: v('sec-ec2-phone') };
+    u.ec3 = { name: v('sec-ec3-name'), phone: v('sec-ec3-phone') };
+    state.user = u;
+    nvSaveUser(u);
+    showToast(t('sec_contacts_saved'), 'success');
+}
+
 function activateSOS() {
     try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -2842,13 +3486,29 @@ function activateSOS() {
             gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.25);
             osc.start(ctx.currentTime + delay); osc.stop(ctx.currentTime + delay + 0.25);
         });
-    } catch (_) {}
+    } catch (_) { }
     if (navigator.vibrate) navigator.vibrate([400, 150, 400, 150, 600]);
     const { lat, lon } = state.gpsMetadata;
     logAudit('SOS ACTIVADO — Emergencia reportada');
     const isEs = state.lang === 'es';
+    const u    = state.user || {};
+    const emg  = _getEmergencyNumber(u.country);
+
+    // Contactos personales configurados
+    const contacts = [u.ec1, u.ec2, u.ec3].filter(c => c && c.phone);
+    const contactLines = contacts.length
+        ? contacts.map((c, i) => `${i + 1}. ${c.name ? c.name + ' — ' : ''}📞 ${c.phone}`).join('\n')
+        : (isEs ? '— Sin contactos guardados —' : '— No contacts saved —');
+
+    const personalSection = isEs
+        ? `👥 Llama a tus contactos:\n${contactLines}\n\n`
+        : `👥 Call your contacts:\n${contactLines}\n\n`;
+    const officialSection = isEs
+        ? `🚨 Si no te localizan, llama al ${emg.num} (${emg.label})`
+        : `🚨 If unreachable, call ${emg.num} (${emg.label})`;
+
     showModal(
-        `📍 GPS: ${lat}, ${lon}\n\n📞 ${isEs ? 'Llamando al 112 (España) / 911 (EE.UU.)' : 'Calling 112 (Spain) / 911 (USA)'}`,
+        `📍 GPS: ${lat}, ${lon}\n\n${personalSection}${officialSection}`,
         { title: `🚨 SOS ${isEs ? 'ACTIVADO' : 'ACTIVATED'}` }
     );
 }
@@ -2859,25 +3519,25 @@ function activateSOS() {
 function handleLogout() {
     stopMetronome();
     stopVoiceRecording(true);
-    if (window.NVFirebase && NVFirebase.isReady()) NVFirebase.logout().catch(() => {});
+    if (window.NVFirebase && NVFirebase.isReady()) NVFirebase.logout().catch(() => { });
     state.user = null;
     localStorage.removeItem('nv_user');
     location.reload();
 }
 
 function saveProfileEdit() {
-    const name      = (document.getElementById('edit-name')?.value || '').trim();
-    const email     = (document.getElementById('edit-email')?.value || '').trim();
-    const age       = (document.getElementById('edit-age')?.value || '').trim();
-    const country   = (document.getElementById('edit-country')?.value || '').trim();
+    const name = (document.getElementById('edit-name')?.value || '').trim();
+    const email = (document.getElementById('edit-email')?.value || '').trim();
+    const age = (document.getElementById('edit-age')?.value || '').trim();
+    const country = (document.getElementById('edit-country')?.value || '').trim();
     const emergency = (document.getElementById('edit-emergency')?.value || '').trim();
 
     if (!name || !age || !country) { showToast(t('fill_fields'), 'error'); return; }
 
-    state.user.name             = name;
-    state.user.email            = email;
-    state.user.age              = age;
-    state.user.country          = country;
+    state.user.name = name;
+    state.user.email = email;
+    state.user.age = age;
+    state.user.country = country;
     state.user.emergencyContact = emergency;
     nvSaveUser(state.user);
     // Sincronizar cambios de perfil con Firestore (async, no bloqueante)
@@ -2890,7 +3550,7 @@ function saveProfileEdit() {
 
 function nvToggleSetting(key, row) {
     let s = {};
-    try { s = JSON.parse(localStorage.getItem('nv_settings') || '{}'); } catch {}
+    try { s = JSON.parse(localStorage.getItem('nv_settings') || '{}'); } catch { }
     const current = s[key] !== false; // true si activo
     s[key] = !current;
     localStorage.setItem('nv_settings', JSON.stringify(s));
@@ -2900,7 +3560,7 @@ function nvToggleSetting(key, row) {
     if (toggle) toggle.classList.toggle('on', !current);
 
     const isEs = state.lang === 'es';
-    const onText  = isEs ? 'Módulo activado'   : 'Module enabled';
+    const onText = isEs ? 'Módulo activado' : 'Module enabled';
     const offText = isEs ? 'Módulo desactivado' : 'Module disabled';
     showToast(!current ? onText : offText, !current ? 'success' : 'info');
 }
@@ -2955,7 +3615,7 @@ function _initHealthDropzone() {
 
     // El input transparente cubre todo; para drag-and-drop lo bypaseamos
     // escuchando los eventos en el contenedor padre
-    ['dragenter','dragover'].forEach(evt => {
+    ['dragenter', 'dragover'].forEach(evt => {
         dz.addEventListener(evt, (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -2969,8 +3629,8 @@ function _initHealthDropzone() {
         e.preventDefault();
         e.stopPropagation();
         _dropzoneHover(false);
-        const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-        if (file) handleDroppedFile(file);
+        const files = e.dataTransfer && e.dataTransfer.files;
+        if (files && files.length) handleDroppedFile(files);
     });
 
     console.log('[NVHealth] Dropzone listo ✓ — clic y drag-drop activos');
@@ -2980,9 +3640,9 @@ function _initHealthDropzone() {
 function _dropzoneHover(on) {
     const dz = document.getElementById('upload-dropzone');
     if (!dz) return;
-    dz.style.borderColor  = on ? 'rgba(0,242,255,0.7)'  : 'rgba(0,242,255,0.25)';
-    dz.style.background   = on ? 'rgba(0,242,255,0.07)' : 'rgba(22,27,45,0.6)';
-    dz.style.transform    = on ? 'scale(1.01)'           : 'scale(1)';
+    dz.style.borderColor = on ? 'rgba(0,242,255,0.7)' : 'rgba(0,242,255,0.25)';
+    dz.style.background = on ? 'rgba(0,242,255,0.07)' : 'rgba(22,27,45,0.6)';
+    dz.style.transform = on ? 'scale(1.01)' : 'scale(1)';
 }
 
 // Spinner de "Analizando..." dentro del dropzone
@@ -3020,36 +3680,267 @@ function _dropzoneSetLoading(loading) {
 }
 
 function handleFileUpload(input) {
-    const file = input && (input.files ? input.files[0] : input);
-    if (!file) return;
-
     const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
-    if (!allowed.includes(file.type)) {
-        showToast(state.lang === 'es'
-            ? 'Formato no válido. Use PDF, JPG o PNG.'
-            : 'Invalid format. Use PDF, JPG or PNG.', 'error');
+    const isEs = state.lang === 'es';
+
+    // Collect all files (input element or single File object from drag & drop)
+    let rawFiles = [];
+    if (input && input.files && input.files.length) {
+        rawFiles = Array.from(input.files);
+    } else if (input instanceof File) {
+        rawFiles = [input];
+    } else if (input && input.files) {
+        rawFiles = [input.files[0]];
+    }
+
+    if (!rawFiles.length) return;
+
+    // Validate types
+    const validFiles = rawFiles.filter(f => allowed.includes(f.type));
+    const rejected = rawFiles.length - validFiles.length;
+    if (rejected > 0) {
+        showToast(isEs
+            ? `${rejected} archivo(s) ignorado(s): formato no válido (solo PDF, JPG, PNG).`
+            : `${rejected} file(s) ignored: invalid format (PDF, JPG, PNG only).`, 'error');
+    }
+    if (!validFiles.length) return;
+
+    // Cap at 5 files
+    const capped = validFiles.slice(0, 5);
+    if (validFiles.length > 5) {
+        showToast(isEs ? 'Máximo 5 archivos por lote.' : 'Maximum 5 files per batch.', 'error');
+    }
+
+    state._pendingFiles = capped;
+    state._pendingFile = capped[0]; // compat
+
+    _renderBatchQueue();
+
+    console.log('[NVReports] Cola de archivos:', capped.map(f => f.name));
+}
+
+// ── Render de la cola de archivos pendientes ──────────────────
+function _renderBatchQueue() {
+    const files = state._pendingFiles;
+    const isEs = state.lang === 'es';
+    const batchEl = document.getElementById('batch-queue');
+    if (!batchEl) return;
+
+    if (!files.length) {
+        // Cola vacía: ocultar queue, deshabilitar botón, resetear dropzone
+        batchEl.style.display = 'none';
+        batchEl.innerHTML = '';
+        const anaBox = document.getElementById('report-ana-box');
+        if (anaBox) anaBox.style.display = 'none';
+        const dz = document.getElementById('upload-dropzone');
+        if (dz) dz.style.borderColor = 'rgba(0,242,255,0.25)';
+        const statusEl = document.getElementById('upload-status');
+        if (statusEl) statusEl.innerHTML = `<span style="color:rgba(148,163,184,0.6);">${t('hlt_fmt')}</span>`;
+        // Reset input so the same file can be re-selected
+        const inp = document.getElementById('file-upload-input');
+        if (inp) inp.value = '';
         return;
     }
 
-    // Guardar referencia real al objeto File — crítico para drag & drop
-    state._pendingFile = file;
-    console.log('[NVReports] Archivo detectado:', file.name, '|', file.type, '|', (file.size/1024/1024).toFixed(2), 'MB');
+    batchEl.style.display = 'block';
+    batchEl.innerHTML = files.map((f, i) => {
+        const sizeMB = (f.size / 1024 / 1024).toFixed(2);
+        const ext = f.name.split('.').pop().toUpperCase();
+        const safeN = encodeURIComponent(f.name);
+        return `
+        <div class="nv-batch-item" id="batch-item-${i}">
+            <div style="display:flex;align-items:center;gap:0.6rem;min-width:0;flex:1;">
+                <span style="font-size:1rem;flex-shrink:0;">${ext === 'PDF' ? '📄' : '🖼'}</span>
+                <div style="min-width:0;">
+                    <div style="font-size:0.8rem;font-weight:700;color:rgba(241,245,249,0.9);
+                                white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px;"
+                         title="${f.name}">${f.name}</div>
+                    <div style="font-size:0.72rem;color:rgba(148,163,184,0.5);">${sizeMB} MB · ${ext}</div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.4rem;flex-shrink:0;">
+                <span id="batch-status-${i}" style="font-size:0.72rem;font-weight:700;color:rgba(148,163,184,0.5);">
+                    ${isEs ? 'En cola' : 'Queued'}
+                </span>
+                <button onclick="handleRemoveBatchFile('${safeN}')"
+                        aria-label="${isEs ? 'Quitar archivo' : 'Remove file'}"
+                        title="${isEs ? 'Quitar archivo' : 'Remove file'}"
+                        style="display:flex;align-items:center;justify-content:center;
+                               width:40px;height:40px;min-width:40px;border-radius:50%;
+                               border:none;background:transparent;cursor:pointer;
+                               color:rgba(239,68,68,0.45);transition:background 0.18s,color 0.18s;"
+                        onmouseover="this.style.background='rgba(239,68,68,0.12)';this.style.color='rgba(239,68,68,0.9)'"
+                        onmouseout="this.style.background='transparent';this.style.color='rgba(239,68,68,0.45)'">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2.8" stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="nv-batch-bar" id="batch-bar-${i}" style="display:none;">
+            <div class="nv-batch-fill" id="batch-fill-${i}" style="width:0%"></div>
+        </div>`;
+    }).join('');
 
-    const sizeMB   = (file.size / 1024 / 1024).toFixed(2);
-    const ext      = file.name.split('.').pop().toUpperCase();
+    // Actualizar hint del dropzone
     const statusEl = document.getElementById('upload-status');
     if (statusEl) statusEl.innerHTML =
-        `<span style="color:var(--primary-green);font-weight:700;">✓ ${file.name}</span>
-         <span style="color:rgba(148,163,184,0.6);margin-left:6px;">${sizeMB} MB · ${ext}</span>`;
+        `<span style="color:var(--primary-green);font-weight:700;">
+            ✓ ${files.length} ${isEs ? 'archivo(s) listos' : 'file(s) ready'}
+         </span>`;
+
+    const dz = document.getElementById('upload-dropzone');
+    if (dz) dz.style.borderColor = 'rgba(16,185,129,0.5)';
+
     const anaBox = document.getElementById('report-ana-box');
     if (anaBox) anaBox.style.display = 'block';
-    const dropZone = document.getElementById('upload-dropzone');
-    if (dropZone) dropZone.style.borderColor = 'rgba(16,185,129,0.5)';
-    state.uploadedFile = { name: file.name, size: sizeMB, type: file.type };
-    showToast(state.lang === 'es'
-        ? `Archivo listo: ${file.name}`
-        : `File ready: ${file.name}`, 'success');
+
     lucide.createIcons();
+}
+
+// ── Quitar un archivo de la cola antes del análisis ───────────
+function handleRemoveBatchFile(encodedName) {
+    if (state.isAnalyzingReport) return; // no permitir durante análisis
+    const fileName = decodeURIComponent(encodedName);
+
+    // Localizar el índice actual en la lista renderizada
+    const files = state._pendingFiles;
+    const idx = files.findIndex(f => f.name === fileName);
+    if (idx === -1) return;
+
+    // Animación fade-out en el item y su barra de progreso
+    const itemEl = document.getElementById(`batch-item-${idx}`);
+    const barEl = document.getElementById(`batch-bar-${idx}`);
+    if (itemEl) itemEl.classList.add('nv-batch-removing');
+    if (barEl) barEl.classList.add('nv-batch-removing');
+
+    // Eliminar del estado y re-renderizar después de la animación (220ms)
+    setTimeout(() => {
+        state._pendingFiles = state._pendingFiles.filter(f => f.name !== fileName);
+        state._pendingFile = state._pendingFiles[0] || null;
+        _renderBatchQueue();
+    }, 230);
+}
+
+// ── Batch analysis: procesa cada archivo secuencialmente ─────
+async function runReportAnalysisBatch() {
+    const files = state._pendingFiles;
+    if (!files || !files.length) {
+        // Fallback: single file via old path
+        return runReportAnalysis();
+    }
+    if (state.isAnalyzingReport) return;
+    if (!window.NVReports) {
+        showToast(state.lang === 'es'
+            ? 'Módulo de análisis no disponible. Recargue la página.'
+            : 'Analysis module unavailable. Please reload.', 'error');
+        return;
+    }
+
+    state.isAnalyzingReport = true;
+    const isEs = state.lang === 'es';
+    const anaBtn = document.getElementById('ana-btn');
+    if (anaBtn) anaBtn.disabled = true;
+
+    let successCount = 0;
+
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const statusEl = document.getElementById(`batch-status-${i}`);
+        const barEl = document.getElementById(`batch-bar-${i}`);
+        const fillEl = document.getElementById(`batch-fill-${i}`);
+        const itemEl = document.getElementById(`batch-item-${i}`);
+
+        // Mark as processing
+        if (statusEl) { statusEl.textContent = isEs ? 'Analizando…' : 'Analyzing…'; statusEl.style.color = 'var(--accent-cyan)'; }
+        if (barEl) { barEl.style.display = 'block'; }
+
+        try {
+            const { analysis } = await NVReports.analyzeFile(file, state.lang, (progress) => {
+                const pct = Math.round(progress * 100);
+                if (fillEl) fillEl.style.width = pct + '%';
+                if (statusEl) statusEl.textContent = `OCR ${pct}%`;
+            });
+
+            const report = {
+                id: `${Date.now()}_${i}_${Math.random().toString(36).slice(2, 7)}`,
+                date: new Date().toISOString().split('T')[0],
+                source: file.name,
+                fileName: file.name,
+                fileType: file.type,
+                lang: state.lang,
+                diagnostico_principal: analysis.diagnostico_principal,
+                medicacion_activa: analysis.medicacion_activa,
+                recomendaciones: analysis.recomendaciones,
+                metricas: analysis.metricas || {},
+                alertas: analysis.alertas || [],
+                dominios: analysis.dominios || {},
+                estadio: analysis.estadio || '',
+                isCritical: analysis.isCritical || false,
+                diagnosis: analysis.diagnostico_principal,
+                analysis: analysis.recomendaciones,
+                medicacion: analysis.medicacion_activa,
+            };
+
+            // Save
+            const uid = state.user && state.user.uid ? state.user.uid : null;
+            if (uid && window.NVFirebase && NVFirebase.isReady()) {
+                NVFirebase.saveMedicalReport(uid, report)
+                    .catch(e => console.warn('[Health] Firestore save fallido:', e));
+            }
+            NVReports.saveLocal(report);
+            state.medicalReports.unshift(report);
+            state.profileSummary.unshift({ date: report.date, diagnosis: report.diagnostico_principal, body: report.recomendaciones, source: report.source });
+
+            // Mark done
+            if (fillEl) fillEl.style.width = '100%';
+            if (statusEl) { statusEl.textContent = isEs ? '✓ Listo' : '✓ Done'; statusEl.style.color = 'var(--primary-green)'; }
+            if (itemEl) itemEl.style.opacity = '0.65';
+
+            successCount++;
+            _renderMedicalReportsList();
+
+        } catch (e) {
+            console.error(`[NVReports] Error en archivo ${file.name}:`, e);
+            if (statusEl) { statusEl.textContent = isEs ? '✗ Error' : '✗ Failed'; statusEl.style.color = '#ef4444'; }
+            if (barEl) barEl.style.display = 'none';
+        }
+    }
+
+    localStorage.setItem('nv_prof_summary', JSON.stringify(state.profileSummary.slice(0, 20)));
+    logAudit(isEs ? `${successCount} informe(s) médico(s) analizados por IA` : `${successCount} medical report(s) analyzed by AI`);
+
+    if (successCount > 0) {
+        showToast(isEs
+            ? `${successCount} informe(s) procesado(s) correctamente`
+            : `${successCount} report(s) processed successfully`, 'success');
+    }
+
+    // Reset state
+    state.isAnalyzingReport = false;
+    state._pendingFiles = [];
+    state._pendingFile = null;
+    if (anaBtn) {
+        anaBtn.disabled = false;
+        anaBtn.innerHTML = `<i data-lucide="cpu"></i> ${t('hlt_analyze')}`;
+        lucide.createIcons();
+    }
+}
+
+// ── Eliminar informe por id ───────────────────────────────────
+function deleteReport(id) {
+    const isEs = state.lang === 'es';
+    state.medicalReports = state.medicalReports.filter(r => String(r.id) !== String(id));
+    if (window.NVReports) NVReports.deleteLocal(id);
+    const uid = state.user && state.user.uid ? state.user.uid : null;
+    if (uid && window.NVFirebase && NVFirebase.isReady()) {
+        NVFirebase.deleteEvaluation(uid, id)
+            .catch(e => console.warn('[Health] Firestore delete fallido:', e));
+    }
+    _renderMedicalReportsList();
+    showToast(isEs ? 'Informe eliminado.' : 'Report deleted.', 'success');
 }
 
 // ============================================================
@@ -3102,7 +3993,7 @@ function _renderGPSMap(lat, lon, acc) {
     const delta = 0.015;
     const frame = document.getElementById('gps-map-frame');
     if (frame) {
-        frame.src = `https://www.openstreetmap.org/export/embed.html?bbox=${lon-delta},${lat-delta},${lon+delta},${lat+delta}&layer=mapnik&marker=${lat},${lon}`;
+        frame.src = `https://www.openstreetmap.org/export/embed.html?bbox=${lon - delta},${lat - delta},${lon + delta},${lat + delta}&layer=mapnik&marker=${lat},${lon}`;
     }
     const coordEl = document.getElementById('gps-coords');
     if (coordEl) {
@@ -3139,7 +4030,7 @@ function nvLoadMeds() {
 
 function checkDailyMedReset() {
     const lastDate = localStorage.getItem('nv_med_date');
-    const today    = new Date().toDateString();
+    const today = new Date().toDateString();
     if (lastDate !== today) {
         state.medications.forEach(m => m.taken = false);
         localStorage.setItem('nv_med_date', today);
@@ -3151,6 +4042,11 @@ function toggleMedTaken(i) {
     if (i < 0 || i >= state.medications.length) return;
     state.medications[i].taken = !state.medications[i].taken;
     nvSaveMeds();
+    // Si el usuario marca como tomada desde la UI, detener la alarma de audio
+    if (state.medications[i].taken && _alarmActive) {
+        _stopAlarmAudio();
+        _hideAlarmFallbackUI();
+    }
     // Update DOM without full re-render
     const chk = document.getElementById(`med-chk-${i}`);
     if (chk) {
@@ -3166,6 +4062,79 @@ function toggleMedTaken(i) {
         badge.style.color = state.medications[i].taken
             ? 'var(--primary-green)' : 'rgba(148,163,184,0.6)';
     }
+}
+
+function editMed(i) {
+    const med = state.medications[i];
+    if (!med) return;
+    const isEs = state.lang === 'es';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'nv-modal-overlay';
+    const card = document.createElement('div');
+    card.className = 'nv-modal-card';
+    card.innerHTML = `
+        <h3 style="color:var(--accent-cyan);margin-bottom:1.2rem;font-size:1.1rem;">
+            ${isEs ? 'Editar tratamiento' : 'Edit medication'}
+        </h3>
+        <div style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:1.4rem;">
+            <div>
+                <label style="font-size:0.75rem;color:rgba(148,163,184,0.7);font-weight:700;
+                              letter-spacing:0.05em;text-transform:uppercase;display:block;margin-bottom:0.35rem;">
+                    ${isEs ? 'Nombre' : 'Name'}
+                </label>
+                <input id="_em_name" type="text" value="${med.name.replace(/"/g, '&quot;')}"
+                       style="width:100%;box-sizing:border-box;padding:0.65rem 0.85rem;border-radius:10px;
+                              border:1px solid rgba(255,255,255,0.12);background:rgba(10,15,30,0.7);
+                              color:rgba(241,245,249,0.95);font-size:0.9rem;outline:none;
+                              transition:border-color 0.2s;"
+                       onfocus="this.style.borderColor='rgba(0,242,255,0.45)'"
+                       onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+            </div>
+            <div>
+                <label style="font-size:0.75rem;color:rgba(148,163,184,0.7);font-weight:700;
+                              letter-spacing:0.05em;text-transform:uppercase;display:block;margin-bottom:0.35rem;">
+                    ${isEs ? 'Hora' : 'Time'}
+                </label>
+                <input id="_em_time" type="time" value="${med.time}"
+                       style="width:100%;box-sizing:border-box;padding:0.65rem 0.85rem;border-radius:10px;
+                              border:1px solid rgba(255,255,255,0.12);background:rgba(10,15,30,0.7);
+                              color:rgba(241,245,249,0.95);font-size:0.9rem;outline:none;
+                              transition:border-color 0.2s;"
+                       onfocus="this.style.borderColor='rgba(0,242,255,0.45)'"
+                       onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+            </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.6rem;">
+            <button id="_em_save" class="action-btn btn-primary" style="width:100%;">
+                ${isEs ? 'Guardar cambios' : 'Save changes'}
+            </button>
+            <button id="_em_cancel" class="action-btn" style="width:100%;border:1px solid rgba(255,255,255,0.1);">
+                ${isEs ? 'Cancelar' : 'Cancel'}
+            </button>
+        </div>`;
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    const close = () => overlay.parentNode && overlay.parentNode.removeChild(overlay);
+    overlay.onclick = (e) => { if (e.target === overlay) close(); };
+    card.querySelector('#_em_cancel').onclick = close;
+    card.querySelector('#_em_save').onclick = () => {
+        const newName = card.querySelector('#_em_name').value.trim();
+        const newTime = card.querySelector('#_em_time').value;
+        if (!newName || !newTime) {
+            showToast(isEs ? 'Nombre y hora son obligatorios.' : 'Name and time are required.', 'error');
+            return;
+        }
+        state.medications[i].name = newName;
+        state.medications[i].time = newTime;
+        state.medications.sort((a, b) => a.time.localeCompare(b.time));
+        nvSaveMeds();
+        close();
+        render();
+        showToast(isEs ? 'Tratamiento actualizado.' : 'Medication updated.', 'success');
+    };
+    lucide.createIcons();
 }
 
 function deleteMed(i) {
@@ -3206,66 +4175,401 @@ function saveNewMed() {
 // NOTIFICACIONES NATIVAS (Web Notifications API)
 // ============================================================
 let _notifInterval = null;
+let _notifFiredToday = new Set(); // evita disparar la misma alarma 2 veces en el mismo minuto
+let _bgWarnShown = false;
+
+// ── Estado del motor de alarma de audio ──────────────────────
+let _alarmAudioCtx = null;   // AudioContext en curso
+let _alarmLoopTimer = null;   // setInterval del bucle de beeps
+let _alarmAudioObj = null;   // Audio() object para MP3 (si existe)
+let _alarmActive = false;  // flag global de alarma activa
 
 function requestNotifPermission() {
+    const isEs = state.lang === 'es';
+
+    // ── Requisito HTTPS ───────────────────────────────────────
+    const isSecure = location.protocol === 'https:'
+        || location.hostname === 'localhost'
+        || location.hostname === '127.0.0.1';
+    if (!isSecure) {
+        showToast(isEs
+            ? '⚠ Las notificaciones requieren HTTPS o localhost. Accede desde una conexión segura.'
+            : '⚠ Notifications require HTTPS or localhost. Use a secure connection.', 'warning');
+        return;
+    }
+
+    // ── API no disponible ─────────────────────────────────────
     if (!('Notification' in window)) {
-        showToast(state.lang === 'es'
+        showToast(isEs
             ? 'Notificaciones no disponibles en este navegador.'
             : 'Notifications not available in this browser.', 'error');
         return;
     }
-    if (Notification.permission === 'granted') {
-        showToast(state.lang === 'es'
-            ? 'Notificaciones ya están activas ✓'
-            : 'Notifications already active ✓', 'info');
+
+    const perm = Notification.permission;
+
+    // ── Ya concedido ──────────────────────────────────────────
+    if (perm === 'granted') {
+        showToast(isEs ? 'Recordatorios de medicación activos ✓' : 'Medication reminders active ✓', 'info');
         startMedReminders();
         return;
     }
-    Notification.requestPermission().then(perm => {
-        if (perm === 'granted') {
-            showToast(state.lang === 'es'
-                ? 'Recordatorios de medicación activados ✓'
-                : 'Medication reminders enabled ✓', 'success');
+
+    // ── Denegado por el usuario — mostrar guía ────────────────
+    if (perm === 'denied') {
+        _showNotifDeniedGuide();
+        return;
+    }
+
+    // ── Estado 'default' — solicitar permiso al navegador ─────
+    Notification.requestPermission().then(result => {
+        if (result === 'granted') {
+            showToast(isEs ? 'Recordatorios de medicación activados ✓' : 'Medication reminders enabled ✓', 'success');
             startMedReminders();
             _updateNotifBanner();
         } else {
-            showToast(state.lang === 'es'
-                ? 'Permiso denegado. Actívalo en la configuración del navegador.'
-                : 'Permission denied. Enable it in browser settings.', 'warning');
+            // El usuario denegó desde el diálogo nativo
+            _updateNotifBanner();
+            setTimeout(_showNotifDeniedGuide, 300);
         }
     });
 }
 
-function startMedReminders() {
-    if (_notifInterval) clearInterval(_notifInterval);
-    _notifInterval = setInterval(() => {
-        if (Notification.permission !== 'granted') return;
-        const now     = new Date();
-        const timeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
-        state.medications.forEach(med => {
-            if (med.time === timeStr && !med.taken) {
-                new Notification(
-                    '💊 ' + (state.lang === 'es' ? 'NeuroVida — Medicación' : 'NeuroVida — Medication'),
-                    {
-                        body: (state.lang === 'es' ? 'Es hora de tomar: ' : 'Time to take: ') + med.name,
-                        tag:  `med_${med.time}`,
-                        icon: '/favicon.ico'
-                    }
-                );
+function _showNotifDeniedGuide() {
+    const isEs = state.lang === 'es';
+    let guide = document.getElementById('notif-denied-guide');
+    if (!guide) {
+        // Si el div no está en el DOM (e.g. vista no renderizada), no hacer nada
+        return;
+    }
+    guide.style.display = 'block';
+    guide.innerHTML = `
+        <div style="display:flex;align-items:flex-start;gap:0.6rem;padding:0.85rem 1rem;
+                    border-radius:12px;background:rgba(239,68,68,0.06);
+                    border:1px solid rgba(239,68,68,0.22);margin-top:0.6rem;
+                    animation:nvFadeIn 0.25s ease;">
+            <span style="font-size:1.15rem;flex-shrink:0;line-height:1.2;">🔒</span>
+            <div style="flex:1;min-width:0;">
+                <div style="font-weight:800;font-size:0.83rem;color:rgba(239,68,68,0.9);margin-bottom:0.35rem;">
+                    ${isEs ? 'Notificaciones bloqueadas' : 'Notifications blocked'}
+                </div>
+                <div style="font-size:0.78rem;color:rgba(241,245,249,0.78);line-height:1.65;">
+                    ${isEs
+            ? 'Para recibir tus avisos de medicación, haz clic en el icono del <b style="color:rgba(241,245,249,0.95);">candado 🔒</b> junto a la dirección de la web, activa el interruptor de <b style="color:rgba(241,245,249,0.95);">Notificaciones</b> y recarga la página.'
+            : 'To receive your medication alerts, click the <b style="color:rgba(241,245,249,0.95);">lock icon 🔒</b> next to the web address, enable the <b style="color:rgba(241,245,249,0.95);">Notifications</b> toggle, then reload the page.'}
+                </div>
+            </div>
+            <button onclick="document.getElementById('notif-denied-guide').style.display='none'"
+                    aria-label="${isEs ? 'Cerrar' : 'Close'}"
+                    style="display:flex;align-items:center;justify-content:center;
+                           width:30px;height:30px;min-width:30px;border-radius:50%;
+                           border:none;background:transparent;cursor:pointer;
+                           font-size:1rem;color:rgba(148,163,184,0.5);flex-shrink:0;
+                           transition:color 0.15s;"
+                    onmouseover="this.style.color='rgba(241,245,249,0.9)'"
+                    onmouseout="this.style.color='rgba(148,163,184,0.5)'">✕</button>
+        </div>`;
+}
+
+// ============================================================
+// SISTEMA DE ALARMA DE MEDICACIÓN — NIVEL SEGURIDAD CRÍTICA
+// ============================================================
+
+// ── Registro del Service Worker ───────────────────────────────
+async function _registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+    try {
+        const reg = await navigator.serviceWorker.register('/sw.js');
+        console.log('[SW] Registrado ✓ scope:', reg.scope);
+
+        // Escuchar mensajes del SW (acciones de notificación)
+        navigator.serviceWorker.addEventListener('message', e => {
+            const { type, medName } = e.data || {};
+            if (type === 'MED_TAKEN') {
+                stopMedicationAlert(true, medName);
+            } else if (type === 'MED_SNOOZE') {
+                const mins = e.data.minutes || 5;
+                stopMedicationAlert(false);
+                snoozeMedication(medName, mins);
             }
         });
-    }, 60000); // Comprueba cada minuto
+    } catch (err) {
+        console.warn('[SW] No se pudo registrar:', err.message);
+    }
+}
+
+// ── Motor de audio en bucle (patrón médico: beep-beep-pausa) ─
+function _startAlarmAudio() {
+    if (_alarmActive) return; // ya sonando
+    _alarmActive = true;
+
+    // Intentar MP3 primero (si existe en /assets/sounds/alarm.mp3)
+    try {
+        _alarmAudioObj = new Audio('/assets/sounds/alarm.mp3');
+        _alarmAudioObj.loop = true;
+        _alarmAudioObj.volume = 0.75;
+        _alarmAudioObj.play().catch(() => {
+            // El archivo no existe o autoplay bloqueado → Web Audio fallback
+            _alarmAudioObj = null;
+            _startWebAudioLoop();
+        });
+        return;
+    } catch (_) { /* sin soporte Audio() */ }
+
+    _startWebAudioLoop();
+}
+
+function _startWebAudioLoop() {
+    const AudioCtx = window.AudioContext || /** @type {any} */(window).webkitAudioContext;
+    if (!AudioCtx) return;
+
+    try {
+        _alarmAudioCtx = new AudioCtx();
+    } catch (_) { return; }
+
+    // Patrón: dos beeps rápidos seguidos de silencio, cada 1.4 s
+    function _burst() {
+        if (!_alarmActive || !_alarmAudioCtx) return;
+        const ctx = _alarmAudioCtx;
+        const t = ctx.currentTime;
+
+        [[t, 1047, 0.14], [t + 0.22, 1047, 0.14], [t + 0.44, 784, 0.18]]
+            .forEach(([start, freq, dur]) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(freq, start);
+                gain.gain.setValueAtTime(0.35, start);
+                gain.gain.exponentialRampToValueAtTime(0.001, start + dur);
+                osc.start(start);
+                osc.stop(start + dur + 0.02);
+            });
+
+        _alarmLoopTimer = setTimeout(_burst, 1400);
+    }
+    _burst();
+}
+
+function _stopAlarmAudio() {
+    _alarmActive = false;
+
+    if (_alarmLoopTimer) { clearTimeout(_alarmLoopTimer); _alarmLoopTimer = null; }
+    if (_alarmAudioObj) { _alarmAudioObj.pause(); _alarmAudioObj.currentTime = 0; _alarmAudioObj = null; }
+    if (_alarmAudioCtx) { try { _alarmAudioCtx.close(); } catch (_) { } _alarmAudioCtx = null; }
+}
+
+// ── Overlay de alarma en la app (fallback visible siempre) ───
+function _showAlarmFallbackUI(medName, medTime) {
+    const isEs = state.lang === 'es';
+    let overlay = document.getElementById('nv-alarm-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'nv-alarm-overlay';
+        document.body.appendChild(overlay);
+    }
+    overlay.style.cssText = [
+        'position:fixed;bottom:0;left:0;right:0;z-index:9999;',
+        'padding:1.1rem 1rem 1.5rem;',
+        'background:linear-gradient(0deg,rgba(185,28,28,0.98),rgba(239,68,68,0.96));',
+        'border-top:2px solid rgba(255,120,120,0.7);',
+        'display:flex;flex-direction:column;align-items:center;gap:0.85rem;',
+        'animation:nvAlarmPulse 0.75s ease-in-out infinite alternate;'
+    ].join('');
+
+    overlay.innerHTML = `
+        <div style="font-weight:800;font-size:0.95rem;color:#fff;text-align:center;
+                    animation:nvAlarmBlink 1s ease-in-out infinite;letter-spacing:0.02em;">
+            💊 ${isEs ? `Hora de tomar su ${medName} · ${medTime}` : `Time to take ${medName} · ${medTime}`}
+        </div>
+        <div style="display:flex;gap:0.65rem;width:100%;max-width:420px;">
+            <button onclick="stopMedicationAlert(true,'${medName.replace(/'/g, "\\'")}')"
+                    style="flex:1;padding:0.85rem;border-radius:12px;border:2px solid #fff;
+                           background:#fff;color:#dc2626;font-weight:800;font-size:0.92rem;
+                           cursor:pointer;transition:transform 0.12s;"
+                    onmouseover="this.style.transform='scale(1.03)'"
+                    onmouseout="this.style.transform='scale(1)'">
+                ✓ ${isEs ? 'Tomada' : 'Taken'}
+            </button>
+            <button onclick="snoozeMedication('${medName.replace(/'/g, "\\'")}',5)"
+                    style="flex:1;padding:0.85rem;border-radius:12px;
+                           border:2px solid rgba(255,255,255,0.4);
+                           background:rgba(255,255,255,0.18);color:#fff;
+                           font-weight:700;font-size:0.92rem;cursor:pointer;transition:transform 0.12s;"
+                    onmouseover="this.style.transform='scale(1.03)'"
+                    onmouseout="this.style.transform='scale(1)'">
+                ⏰ ${isEs ? 'Posponer 5 min' : 'Snooze 5 min'}
+            </button>
+        </div>`;
+}
+
+function _hideAlarmFallbackUI() {
+    const overlay = document.getElementById('nv-alarm-overlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+// ── Detener la alarma completa ────────────────────────────────
+function stopMedicationAlert(markTaken, medName) {
+    _stopAlarmAudio();
+    _hideAlarmFallbackUI();
+    if (markTaken && medName) {
+        const idx = state.medications.findIndex(m => m.name === medName);
+        if (idx > -1 && !state.medications[idx].taken) toggleMedTaken(idx);
+    }
+}
+
+// ── Posponer alarma N minutos ─────────────────────────────────
+function snoozeMedication(medName, minutes) {
+    _stopAlarmAudio();
+    _hideAlarmFallbackUI();
+    const snoozeAt = new Date(Date.now() + minutes * 60000);
+    const snoozeStr = `${String(snoozeAt.getHours()).padStart(2, '0')}:${String(snoozeAt.getMinutes()).padStart(2, '0')}`;
+    const med = state.medications.find(m => m.name === medName);
+    if (med) {
+        if (!med._origTime) med._origTime = med.time;
+        med.time = snoozeStr;
+        // Restaurar la hora original tras el disparo + 2 min de margen
+        setTimeout(() => {
+            if (med._origTime) { med.time = med._origTime; delete med._origTime; }
+        }, (minutes + 2) * 60000);
+    }
+    const isEs = state.lang === 'es';
+    showToast(isEs ? `⏰ Alarma pospuesta para las ${snoozeStr}` : `⏰ Alarm snoozed until ${snoozeStr}`, 'info');
+}
+
+// ── Función centralizada de alerta ───────────────────────────
+async function sendMedicationAlert(medName, medTime) {
+    if (Notification.permission !== 'granted') return;
+    const isEs = state.lang === 'es';
+
+    // 1 — Arrancar audio en bucle
+    _startAlarmAudio();
+
+    // 2 — Mostrar overlay en la app (siempre visible, incluso sin permisos de SO)
+    _showAlarmFallbackUI(medName, medTime);
+
+    const opts = {
+        body: isEs
+            ? `Es hora de tomar su ${medName} · ${medTime}`
+            : `Time to take your ${medName} · ${medTime}`,
+        tag: `med_${medTime}_${medName}`,
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        requireInteraction: true,
+        data: { medName, medTime },
+        actions: [
+            { action: 'done', title: isEs ? '✓ Tomada' : '✓ Taken' },
+            { action: 'snooze', title: isEs ? '⏰ Posponer 5 min' : '⏰ Snooze 5 min' }
+        ]
+    };
+
+    // 3 — Usar SW (soporta actions) o fallback a new Notification
+    try {
+        if ('serviceWorker' in navigator) {
+            const reg = await navigator.serviceWorker.ready;
+            await reg.showNotification('💊 NeuroVida — ' + (isEs ? 'Medicación' : 'Medication'), opts);
+            return;
+        }
+    } catch (_) { /* sin SW activo */ }
+
+    // Fallback sin actions (navegadores sin SW)
+    new Notification('💊 NeuroVida — ' + (isEs ? 'Medicación' : 'Medication'), {
+        body: opts.body,
+        tag: opts.tag,
+        icon: opts.icon,
+        requireInteraction: true,
+        data: opts.data
+    });
+}
+
+// ── Motor de alarmas — tick cada 30 s ────────────────────────
+function startMedReminders() {
+    if (_notifInterval) clearInterval(_notifInterval);
+    localStorage.setItem('nv_reminders_active', '1');
+
+    // Resetear el Set de disparadas si es un día nuevo
+    const today = new Date().toDateString();
+    if (localStorage.getItem('nv_notif_date') !== today) {
+        _notifFiredToday.clear();
+        localStorage.setItem('nv_notif_date', today);
+    }
+
+    _notifInterval = setInterval(() => {
+        if (Notification.permission !== 'granted') {
+            clearInterval(_notifInterval);
+            _notifInterval = null;
+            localStorage.removeItem('nv_reminders_active');
+            return;
+        }
+
+        const now = new Date();
+        const todayStr = now.toDateString();
+        const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+        // Nuevo día → limpiar duplicados
+        if (localStorage.getItem('nv_notif_date') !== todayStr) {
+            _notifFiredToday.clear();
+            localStorage.setItem('nv_notif_date', todayStr);
+        }
+
+        state.medications.forEach(med => {
+            const key = `${med.name}__${timeStr}`;
+            if (med.time === timeStr && !med.taken && !_notifFiredToday.has(key)) {
+                _notifFiredToday.add(key);
+                sendMedicationAlert(med.name, med.time);
+            }
+        });
+    }, 30000); // ← 30 segundos: máxima precisión sin Service Worker
+}
+
+// ── Detener el motor ─────────────────────────────────────────
+function stopMedReminders() {
+    if (_notifInterval) { clearInterval(_notifInterval); _notifInterval = null; }
+    localStorage.removeItem('nv_reminders_active');
+}
+
+// ── Prueba instantánea (botón de diagnóstico / certificación) ─
+function testMedicationAlert() {
+    const isEs = state.lang === 'es';
+    if (Notification.permission !== 'granted') {
+        requestNotifPermission();
+        return;
+    }
+    const testName = state.medications.length
+        ? state.medications[0].name
+        : (isEs ? 'Medicamento de prueba' : 'Test medication');
+    const now = new Date();
+    const testTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    sendMedicationAlert(testName, testTime);
+    showToast(isEs ? '🔔 Alarma de prueba activada — toca "Tomada" para detenerla.' : '🔔 Test alarm active — tap "Taken" to stop it.', 'success');
 }
 
 function _updateNotifBanner() {
-    const banner  = document.getElementById('notif-banner');
+    const banner = document.getElementById('notif-banner');
     const bannerT = document.getElementById('notif-banner-text');
     if (!banner || !bannerT) return;
-    const granted = Notification.permission === 'granted';
-    banner.style.borderColor = granted ? 'rgba(16,185,129,0.3)' : 'rgba(0,242,255,0.15)';
+    const perm = Notification.permission;
+    const isEs = state.lang === 'es';
+    const granted = perm === 'granted';
+    const denied = perm === 'denied';
+
+    banner.style.borderColor = granted ? 'rgba(16,185,129,0.3)' : denied ? 'rgba(239,68,68,0.25)' : 'rgba(0,242,255,0.15)';
     bannerT.textContent = granted
-        ? (state.lang === 'es' ? 'Recordatorios activos ✓' : 'Reminders active ✓')
-        : (state.lang === 'es' ? 'Activar recordatorios de medicación' : 'Enable medication reminders');
+        ? (isEs ? 'Recordatorios activos ✓' : 'Reminders active ✓')
+        : denied
+            ? (isEs ? 'Bloqueadas — Toca para ver cómo activar' : 'Blocked — Tap to see how to enable')
+            : (isEs ? 'Activar recordatorios de medicación' : 'Enable medication reminders');
+
+    // Actualizar icono de estado (chevron → check / alert)
+    const iconEl = banner.querySelector('i[data-lucide]');
+    if (iconEl && window.lucide) {
+        iconEl.setAttribute('data-lucide', granted ? 'check-circle' : denied ? 'alert-circle' : 'chevron-right');
+        iconEl.style.color = granted ? 'var(--primary-green)' : denied ? 'rgba(239,68,68,0.6)' : 'rgba(148,163,184,0.4)';
+        lucide.createIcons({ nodes: [iconEl] });
+    }
+
+    if (denied) _showNotifDeniedGuide();
 }
 
 // ============================================================
@@ -3278,8 +4582,8 @@ function nvHistoryDelete(id) {
         t('ev_del_confirm'),
         {
             confirmText: state.lang === 'es' ? 'Eliminar' : 'Delete',
-            cancelText:  t('cancel'),
-            onConfirm:   () => { NVHistory.deleteById(id); render(); }
+            cancelText: t('cancel'),
+            onConfirm: () => { NVHistory.deleteById(id); render(); }
         }
     );
 }
@@ -3292,8 +4596,8 @@ function nvHistoryClearAll() {
             : 'Delete all rehabilitation session history?',
         {
             confirmText: state.lang === 'es' ? 'Borrar todo' : 'Clear all',
-            cancelText:  t('cancel'),
-            onConfirm:   () => { NVHistory.clearAll(); render(); }
+            cancelText: t('cancel'),
+            onConfirm: () => { NVHistory.clearAll(); render(); }
         }
     );
 }
@@ -3318,9 +4622,9 @@ function _initEvoChart() {
 
     const scores = chartSessions.map(s => {
         const mx = s.metrics || {};
-        if (s.type === 'tapping')   return Math.max(0, Math.min(100, 100 - (mx.jitter || 50)));
-        if (s.type === 'drawing')   return mx.stability || 0;
-        if (s.type === 'vocal')     return mx.stability || 0;
+        if (s.type === 'tapping') return Math.max(0, Math.min(100, 100 - (mx.jitter || 50)));
+        if (s.type === 'drawing') return mx.stability || 0;
+        if (s.type === 'vocal') return mx.stability || 0;
         if (s.type === 'breathing') return Math.min(100, (mx.cycles || 0) * 10);
         return 50;
     });
@@ -3354,14 +4658,16 @@ function _initEvoChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: {
-                backgroundColor: 'rgba(14,20,45,0.9)',
-                borderColor: 'rgba(16,185,129,0.3)',
-                borderWidth: 1,
-                titleColor: '#10b981',
-                bodyColor: 'rgba(241,245,249,0.85)',
-                callbacks: { label: ctx => ` ${ctx.parsed.y}%` }
-            }},
+            plugins: {
+                legend: { display: false }, tooltip: {
+                    backgroundColor: 'rgba(14,20,45,0.9)',
+                    borderColor: 'rgba(16,185,129,0.3)',
+                    borderWidth: 1,
+                    titleColor: '#10b981',
+                    bodyColor: 'rgba(241,245,249,0.85)',
+                    callbacks: { label: ctx => ` ${ctx.parsed.y}%` }
+                }
+            },
             scales: {
                 x: { ticks: { color: 'rgba(148,163,184,0.5)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
                 y: { min: 0, max: 100, ticks: { color: 'rgba(148,163,184,0.5)', font: { size: 10 }, callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.05)' } }
@@ -3379,17 +4685,17 @@ function setEvoFilter(type) {
 
 // ── Modal de detalle de sesión (Parkinson-Friendly) ──────────
 function openSessionDetail(id) {
-    const isEs     = state.lang === 'es';
-    const allSess  = window.NVHistory ? NVHistory.getAll() : (state.sessionHistory || []);
-    const meta     = window.NVHistory ? NVHistory.TEST_META : {};
-    const s        = allSess.find(x => x.id === id);
+    const isEs = state.lang === 'es';
+    const allSess = window.NVHistory ? NVHistory.getAll() : (state.sessionHistory || []);
+    const meta = window.NVHistory ? NVHistory.TEST_META : {};
+    const s = allSess.find(x => x.id === id);
     if (!s) return;
 
-    const m        = meta[s.type] || { icon: 'activity', color: '#00F2FF', labelEs: s.type, labelEn: s.type };
-    const label    = isEs ? m.labelEs : m.labelEn;
-    const tsText   = window.NVHistory ? NVHistory.formatTs(s.ts, state.lang) : new Date(s.ts).toLocaleString();
-    const mx       = s.metrics || {};
-    const phase    = s.phase || 'ON';
+    const m = meta[s.type] || { icon: 'activity', color: '#00F2FF', labelEs: s.type, labelEn: s.type };
+    const label = isEs ? m.labelEs : m.labelEn;
+    const tsText = window.NVHistory ? NVHistory.formatTs(s.ts, state.lang) : new Date(s.ts).toLocaleString();
+    const mx = s.metrics || {};
+    const phase = s.phase || 'ON';
     const phaseCol = phase === 'ON' ? '#10b981' : '#ef4444';
 
     // ── Construir filas de métricas ──
@@ -3402,7 +4708,7 @@ function openSessionDetail(id) {
 
     const shareText = encodeURIComponent(
         `${t('ev_share_title')}\n${label} · ${tsText}\nPhase: ${phase}\n` +
-        Object.entries(mx).map(([k,v]) => `${k}: ${v}`).join(' · ') +
+        Object.entries(mx).map(([k, v]) => `${k}: ${v}`).join(' · ') +
         `\n\nNeuroVida PRO — ${isEs ? 'Ecosistema Digital Parkinson' : 'Parkinson Digital Ecosystem'}`
     );
 
@@ -3416,7 +4722,7 @@ function openSessionDetail(id) {
     <div style="width:100%;max-height:92vh;overflow-y:auto;
                 background:linear-gradient(160deg,rgba(18,24,52,0.98),rgba(10,15,30,0.99));
                 border-radius:28px 28px 0 0;padding:1.8rem 1.5rem 2.5rem;
-                border-top:1px solid rgba(${m.color.slice(1).match(/../g).map(x=>parseInt(x,16)).join(',')},0.25);
+                border-top:1px solid rgba(${m.color.slice(1).match(/../g).map(x => parseInt(x, 16)).join(',')},0.25);
                 box-shadow:0 -8px 40px rgba(0,0,0,0.6);">
 
         <!-- Handle -->

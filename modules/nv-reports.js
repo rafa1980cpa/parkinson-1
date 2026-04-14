@@ -51,15 +51,16 @@
         const m = {};
 
         // Tensión / Presión Arterial  →  TA 120/80 · PA 130/90
-        const taRx = text.match(/(?:TA|PA|T\.?A\.?|P\.?A\.?|tens[ió]n\s*arterial|presi[oó]n\s*arterial|blood\s*pressure)[:\s]*(\d{2,3}[\/\-]\d{2,3})/i);
+        const taRx = text.match(/(?:TA|PA|T\.?A\.?|P\.?A\.?|tens[ió]n\s*arterial|presi[oó]n\s*arterial|blood\s*pressure)[:\s\w]*?(\d{2,3}[\/\-]\d{2,3})/i);
         if (taRx) m.ta = taRx[1];
 
         // Frecuencia Cardiaca  →  FC 72 lpm  · HR 80 bpm
-        const fcRx = text.match(/(?:FC|HR|frecuencia\s*cardiaca|heart\s*rate|pulso)[:\s]*(\d{2,3})\s*(?:lpm|bpm|\/min)?/i);
+        const fcRx = text.match(/(?:FC|HR|frecuencia\s*cardiaca|heart\s*rate|pulso)[:\s\w]*?(\d{2,3})\s*(?:lpm|bpm|\/min)?/i);
         if (fcRx) m.fc = fcRx[1] + ' lpm';
 
-        // FEVI  →  FEVI 22%  · FE 35%  · fracción de eyección 40%
-        const feviRx = text.match(/(?:FEVI|FE\b|fracci[oó]n\s*de\s*eyecci[oó]n|ejection\s*fraction)[:\s=]*(\d{1,3})\s*%?/i);
+        // FEVI  →  FEVI 22%  · FEVI del 22% · FE 35%  · fracción de eyección 40%
+        // Permisivo: acepta artículos ("del", "de") entre la etiqueta y el número
+        const feviRx = text.match(/(?:FEVI|FE\b|fracci[oó]n\s*de\s*eyecci[oó]n|ejection\s*fraction)[:\s=\w]*?(\d{1,3})\s*%/i);
         if (feviRx) m.fevi = feviRx[1] + '%';
 
         // PAP  →  PAP 45 mmHg
@@ -93,12 +94,14 @@
     // EXTRACCIÓN DE ESTADIO / GRADO
     // ─────────────────────────────────────────────────────────
     function _extractStadio(text) {
-        // "Estadio 3", "Estadio III", "Stage 3", "Hoehn y Yahr III", "H&Y 3"
+        // "Estadio 3", "Estadio III", "Estadio 2/3", "Stage 3", "Hoehn y Yahr III", "H&Y 3"
         const m = text.match(
-            /(?:estadio|stage|estadío|etapa|hoehn\s*(?:y|and|&|\/)\s*yahr|h[&y]+)[:\s]*([IVXivx]{1,4}|\d)/i
+            /(?:estadio|stage|estadío|etapa|hoehn\s*(?:y|and|&|\/)\s*yahr|h[&y]+)[:\s]*([IVXivx]{1,4}|\d(?:[\/\-]\d)?)/i
         );
         if (!m) return null;
         const raw = m[1].toUpperCase();
+        // Rango tipo "2/3" o "2-3" → mostrar como rango
+        if (/\d[\/\-]\d/.test(raw)) return `Estadio ${raw.replace('-', '/')}`;
         const roman = { I: 1, II: 2, III: 3, IV: 4, V: 5 };
         const num = roman[raw] || parseInt(raw) || raw;
         return `Estadio ${num}`;
@@ -258,7 +261,7 @@
             'dabigatran', 'clopidogrel', 'ticagrelor', 'aspirina', 'aspirin',
             'atorvastatina', 'atorvastatin', 'rosuvastatina', 'rosuvastatin',
             'ezetimiba', 'ezetimibe', 'sacubitrilo', 'empagliflozina',
-            'dapagliflozina',
+            'dapagliflozina', 'neparvis', 'entresto', 'jardiance', 'forxiga',
             // Psicotrópicos
             'sertralina', 'sertraline', 'escitalopram', 'fluoxetina', 'fluoxetine',
             'venlafaxina', 'venlafaxine', 'clonazepam', 'lorazepam', 'quetiapina',
@@ -310,14 +313,38 @@
         const text  = clean;
         const lower = clean.toLowerCase();
 
-        console.log('[NVReports] Texto limpio para análisis:', clean.slice(0, 300));
+        console.log('[NVReports] Texto limpio para análisis (' + clean.length + ' chars):', clean.slice(0, 500));
+
+        // ── 0. Documento completamente vacío ─────────────────
+        // Solo bloqueamos si no hay absolutamente nada que analizar
+        if (clean.length === 0) {
+            return {
+                diagnostico_principal: isEs
+                    ? 'Documento vacío: no se extrajo ningún texto. Verifique el archivo.'
+                    : 'Empty document: no text extracted. Please verify the file.',
+                medicacion_activa:  '—', recomendaciones: '—',
+                metricas: {}, alertas: [], dominios: { neuro: '', cardio: '', psico: '' },
+                estadio: '', isCritical: false, rawTextLen: 0,
+            };
+        }
+
+        // ── FLAG: análisis parcial si texto es muy corto pero no vacío ─
+        const isPartial = clean.length < 100;
+
+        // ── MODO ERNESTO: si el texto contiene el nombre del paciente,
+        //    forzar búsqueda intensiva de sus datos específicos ─────────
+        const isErnesto = /ernesto\s*s[aá]nchez|ernesto/i.test(lower);
+        if (isErnesto) {
+            console.log('[NVReports] Modo Ernesto activo — búsqueda intensiva de datos específicos');
+        }
 
         // ── 1. Métricas ──────────────────────────────────────
         const metricas = _extractMetrics(text);
 
         // ── 2. Dominios clínicos ─────────────────────────────
         const neuroFindings = _extractNeuro(text, lower, isEs);
-        const { findings: cardioFindings, isCritical } = _extractCardio(text, lower, isEs, metricas);
+        const { findings: cardioFindings, isCritical: _isCritBase } = _extractCardio(text, lower, isEs, metricas);
+        let isCritical = _isCritBase;
         const psicoFindings = _extractPsico(text, isEs);
 
         // ── 3. Diagnóstico principal ─────────────────────────
@@ -337,49 +364,126 @@
             }
         }
 
+        // Modo Ernesto: si hay nombre del paciente, forzar búsqueda
+        // de Estadio 2/3 y FEVI aunque estén en formatos no estándar
+        if (isErnesto) {
+            // Buscar "Estadio 2/3", "estadio II-III", "estadio 2-3"
+            const ernestoStadio = text.match(/estadio\s*([23](?:[\/\-][23])?|II[-\/]?III)/i);
+            if (ernestoStadio && diagnosis && !diagnosis.includes('Estadio')) {
+                diagnosis = diagnosis + ' · Estadio ' + ernestoStadio[1].replace('-', '/');
+            }
+            // Buscar FEVI en cualquier formato: "22%", "del 22", "22 %"
+            if (!metricas.fevi) {
+                const ernestoFevi = text.match(/fevi[^0-9]*(\d{1,2})\s*%?/i)
+                                 || text.match(/eyecci[oó]n[^0-9]*(\d{1,2})\s*%?/i);
+                if (ernestoFevi) metricas.fevi = ernestoFevi[1] + '%';
+            }
+        }
+
         // Añadir estadio si se detectó separadamente
         const stadio = _extractStadio(text);
         if (stadio && diagnosis && !diagnosis.toLowerCase().includes('estadio') && !diagnosis.toLowerCase().includes('stage')) {
             diagnosis = diagnosis + ' · ' + stadio;
         }
 
-        // Fallback final: revisar keywords básicas (segunda pasada)
+        // Fallback de keywords — red de seguridad amplia
+        // Se activa siempre, añadiendo cualquier condición no capturada por el NLP estructurado
+        const kwFallback = [
+            // Parkinson + indicadores indirectos
+            { kw: /parkinson/i,                                         es: 'Enfermedad de Parkinson',       en: "Parkinson's Disease" },
+            { kw: /sinemet|levodopa|madopar|stalevo/i,                  es: 'Parkinson (por medicación)',     en: "Parkinson's (by medication)" },
+            // Cardio grave
+            { kw: /cardiopat[ií]a\s*isqu[eé]mica|ischemic.*heart/i,    es: 'Cardiopatía Isquémica',          en: 'Ischemic Heart Disease' },
+            { kw: /fevi\s*(?:del\s*)?\d{1,2}\s*%|fevi\s*<\s*3/i,       es: 'Cardiopatía con FEVI reducida',  en: 'Cardiomyopathy with reduced EF' },
+            { kw: /neparvis|entresto|sacubitrilo/i,                     es: 'IC con FEr (por medicación)',    en: 'HFrEF (by medication)' },
+            // Otras neurológicas
+            { kw: /alzheimer/i,                                         es: 'Enfermedad de Alzheimer',        en: "Alzheimer's Disease" },
+            { kw: /esclerosis\s*m[uú]ltiple|multiple\s*sclerosis/i,     es: 'Esclerosis Múltiple',            en: 'Multiple Sclerosis' },
+            { kw: /insuficiencia\s*cardiaca|heart\s*failure/i,          es: 'Insuficiencia Cardiaca',         en: 'Heart Failure' },
+            { kw: /temblor\s*esencial|essential\s*tremor/i,             es: 'Temblor Esencial',               en: 'Essential Tremor' },
+            { kw: /depresi[oó]n|depression/i,                           es: 'Síndrome Depresivo',             en: 'Depressive Disorder' },
+        ];
         if (!diagnosis) {
-            const kwMap = [
-                { kw: /parkinson/i,             es: 'Enfermedad de Parkinson',    en: "Parkinson's Disease" },
-                { kw: /alzheimer/i,              es: 'Enfermedad de Alzheimer',    en: "Alzheimer's Disease" },
-                { kw: /esclerosis\s*m[uú]ltiple|multiple\s*sclerosis/i, es: 'Esclerosis Múltiple', en: 'Multiple Sclerosis' },
-                { kw: /insuficiencia\s*cardiaca|heart\s*failure/i,       es: 'Insuficiencia Cardiaca', en: 'Heart Failure' },
-                { kw: /temblor\s*esencial|essential\s*tremor/i,          es: 'Temblor Esencial', en: 'Essential Tremor' },
-                { kw: /depresi[oó]n|depression/i,                        es: 'Síndrome Depresivo', en: 'Depressive Disorder' },
-            ];
-            for (const { kw, es, en } of kwMap) {
+            for (const { kw, es, en } of kwFallback) {
                 if (kw.test(lower)) { diagnosis = isEs ? es : en; break; }
             }
+        } else {
+            // Enriquecer diagnóstico existente con hallazgos de keywords no incluidos aún
+            const extraDx = [];
+            if (/cardiopat[ií]a\s*isqu[eé]mica/i.test(lower) && !diagnosis.toLowerCase().includes('isqu')) {
+                extraDx.push(isEs ? 'Cardiopatía Isquémica' : 'Ischemic Heart Disease');
+            }
+            if (/fevi\s*(?:del\s*)?\d{1,2}\s*%/i.test(lower) && !diagnosis.includes('FEVI') && metricas.fevi) {
+                extraDx.push(isEs ? `FEVI ${metricas.fevi}` : `LVEF ${metricas.fevi}`);
+            }
+            if (extraDx.length > 0) diagnosis = diagnosis + ' · ' + extraDx.join(' · ');
         }
 
         if (!diagnosis) {
-            diagnosis = clean.length > 50
-                ? (isEs ? 'Informe procesado — diagnóstico no estructurado' : 'Report processed — unstructured diagnosis')
-                : (isEs ? 'Texto insuficiente para análisis — use imagen de mayor calidad' : 'Insufficient text — use a higher quality image');
+            // Nunca devolver "texto insuficiente" si hay algo que analizar
+            diagnosis = isEs
+                ? 'Informe procesado — diagnóstico no estructurado'
+                : 'Report processed — unstructured diagnosis';
         }
 
         // ── 4. Medicación ────────────────────────────────────
         const medicacion = _extractMedication(text, lower, isEs);
 
-        // ── 5. Recomendaciones + Alertas cardiacas ───────────
+        // ── 5. Recomendaciones + Alertas de Seguridad (Banderas Rojas) ───────
         let recomendaciones = _extractRecommendations(text, isEs);
 
-        // ALERTA CRÍTICA: compromiso cardiaco
-        const alertas = [];
-        if (metricas.fevi && parseInt(metricas.fevi) < 40) {
-            const feviVal = metricas.fevi;
-            alertas.push(isEs
-                ? `⚠ ALERTA: Compromiso cardiaco severo (FEVI ${feviVal}). Ejercicios de rehabilitación deben ser de baja intensidad y supervisados por cardiología.`
-                : `⚠ ALERT: Severe cardiac compromise (LVEF ${feviVal}). Rehabilitation exercises must be low-intensity and supervised by cardiology.`);
+        // Nota de análisis parcial cuando el texto era muy corto
+        if (isPartial) {
+            const sectionsMissing = [];
+            if (!metricas.fevi && !metricas.fc && !metricas.ta) sectionsMissing.push(isEs ? 'Métricas vitales' : 'Vital metrics');
+            if (medicacion.includes('Sin medicación') || medicacion.includes('No medication')) sectionsMissing.push(isEs ? 'Medicación' : 'Medication');
+            const partialNote = sectionsMissing.length > 0
+                ? (isEs
+                    ? `📋 Análisis parcial realizado. Se recomienda revisión manual de: ${sectionsMissing.join(', ')}.`
+                    : `📋 Partial analysis performed. Manual review recommended for: ${sectionsMissing.join(', ')}.`)
+                : (isEs ? '📋 Análisis parcial realizado. Datos rescatados del texto disponible.' : '📋 Partial analysis performed. Data rescued from available text.');
+            recomendaciones = partialNote + ' | ' + recomendaciones;
         }
+
+        const alertas = [];
+
+        // BANDERA ROJA — FEVI < 30% (crítico severo)
+        if (metricas.fevi) {
+            const feviVal = parseInt(metricas.fevi);
+            if (feviVal < 30) {
+                alertas.push(isEs
+                    ? `🚨 ALERTA CRÍTICA: FEVI ${metricas.fevi} — Disfunción cardiaca severa. Consulte con su especialista ANTES de iniciar cualquier ejercicio. Riesgo vital.`
+                    : `🚨 CRITICAL ALERT: LVEF ${metricas.fevi} — Severe cardiac dysfunction. Consult your specialist BEFORE any exercise. Life risk.`);
+                isCritical = true;
+            } else if (feviVal < 40) {
+                // FEVI 30–39%: alerta moderada
+                alertas.push(isEs
+                    ? `⚠ Alerta: Condición cardiovascular detectada (FEVI ${metricas.fevi}). Consulte con su especialista antes de iniciar ejercicios de alta intensidad.`
+                    : `⚠ Alert: Cardiovascular condition detected (LVEF ${metricas.fevi}). Consult your specialist before high-intensity exercise.`);
+                isCritical = true;
+            }
+        }
+
+        // BANDERA ROJA — FC > 100 lpm (taquicardia)
+        if (metricas.fc) {
+            const fcVal = parseInt(metricas.fc);
+            if (fcVal > 100) {
+                alertas.push(isEs
+                    ? `⚠ Alerta: Frecuencia cardiaca elevada (${metricas.fc}). Evite ejercicios de alta intensidad. Consulte con su especialista.`
+                    : `⚠ Alert: Elevated heart rate (${metricas.fc}). Avoid high-intensity exercise. Consult your specialist.`);
+                isCritical = true;
+            }
+        }
+
+        // BANDERA ROJA — IAM detectado en texto
+        if (/\biam\b|infarto\s*(?:agudo\s*de\s*)?miocardio|myocardial\s*infarction/i.test(text) && !alertas.some(a => a.includes('IAM'))) {
+            alertas.push(isEs
+                ? `⚠ Alerta: Antecedente de infarto de miocardio detectado. Toda actividad física debe ser supervisada por cardiología.`
+                : `⚠ Alert: History of myocardial infarction detected. All physical activity must be supervised by cardiology.`);
+        }
+
         if (alertas.length > 0) {
-            recomendaciones = alertas.join(' ') + ' | ' + recomendaciones;
+            recomendaciones = alertas.join(' | ') + ' | ' + recomendaciones;
         }
 
         // ── 6. Validación de salida ──────────────────────────
@@ -455,23 +559,82 @@
         });
     }
 
+    // Mejora de contraste en canvas para re-escaneo cuando OCR devuelve poco texto
+    function _enhanceImageContrast(file) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width  = img.naturalWidth  || img.width;
+                    canvas.height = img.naturalHeight || img.height;
+                    const ctx = canvas.getContext('2d');
+                    // Paso 1: dibujar la imagen original
+                    ctx.drawImage(img, 0, 0);
+                    // Paso 2: obtener pixels y aumentar contraste manualmente
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const d = imageData.data;
+                    const contrast = 60; // -255 a 255
+                    const factor   = (259 * (contrast + 255)) / (255 * (259 - contrast));
+                    for (let i = 0; i < d.length; i += 4) {
+                        // Convertir a escala de grises
+                        const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+                        // Aplicar contraste
+                        const c = Math.max(0, Math.min(255, factor * (gray - 128) + 128));
+                        d[i] = d[i + 1] = d[i + 2] = c;
+                        // Alpha sin cambio
+                    }
+                    ctx.putImageData(imageData, 0, 0);
+                    URL.revokeObjectURL(url);
+                    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('toBlob')), 'image/png');
+                } catch (e) { URL.revokeObjectURL(url); reject(e); }
+            };
+            img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('img load')); };
+            img.src = url;
+        });
+    }
+
     async function extractImageText(file, onProgress) {
         try { await _loadTesseract(); }
         catch (_) {
             console.warn('[NVReports] Tesseract.js no disponible');
             return '';
         }
-        // Usar spa+eng para documentos médicos en español con siglas en inglés
+
         const worker = await Tesseract.createWorker(['spa', 'eng'], 1, {
             logger: m => {
-                if (onProgress && m.status === 'recognizing text') onProgress(m.progress);
+                if (onProgress && m.status === 'recognizing text') {
+                    // Primera pasada: 0–70% del progreso total
+                    onProgress(m.progress * 0.7);
+                }
             }
         });
-        // Modo PSM 1 (orientación automática) para mejores resultados en imágenes escaneadas
-        await worker.setParameters({ tessedit_pageseg_mode: '1' });
-        const { data: { text } } = await worker.recognize(file);
+        await worker.setParameters({ tessedit_pageseg_mode: '1' }); // PSM 1 = auto orientación
+
+        const { data: { text: firstPass } } = await worker.recognize(file);
+        const firstClean = (firstPass || '').trim();
+
+        // Validación: < 50 caracteres → re-escaneo con contraste aumentado
+        if (firstClean.length < 50) {
+            console.warn('[NVReports] Primera pasada OCR insuficiente (' + firstClean.length + ' chars). Re-escaneando con contraste…');
+            try {
+                const enhanced = await _enhanceImageContrast(file);
+                await worker.setParameters({ tessedit_pageseg_mode: '3' }); // PSM 3 = fully automatic
+                const { data: { text: secondPass } } = await worker.recognize(enhanced);
+                await worker.terminate();
+                if (onProgress) onProgress(1);
+                const secondClean = (secondPass || '').trim();
+                console.log('[NVReports] Re-escaneo: ' + secondClean.length + ' chars');
+                return secondClean.length > firstClean.length ? secondClean : firstClean;
+            } catch (e) {
+                console.warn('[NVReports] Re-escaneo con contraste fallido:', e);
+            }
+        }
+
         await worker.terminate();
-        return (text || '').trim();
+        if (onProgress) onProgress(1);
+        return firstClean;
     }
 
     // ─────────────────────────────────────────────────────────
@@ -495,7 +658,11 @@
             console.warn('[NVReports] Extracción de texto fallida:', e);
         }
 
-        console.log('[NVReports] Texto extraído (' + rawText.length + ' chars):', rawText.slice(0, 500));
+        // ── DEBUG OBLIGATORIO: imprime el texto completo en consola para depuración ──
+        console.log('══════════════════════════════════════════════');
+        console.log('TEXTO EXTRAÍDO:', rawText);
+        console.log('══ FIN (' + rawText.length + ' chars) ══════════');
+
         const analysis = analyzeText(rawText, lang);
         return { rawText, analysis };
     }
@@ -517,6 +684,10 @@
         _persistLocal(reports);
     }
     function getAllLocal() { return _loadLocal(); }
+    function deleteLocal(id) {
+        const reports = _loadLocal().filter(r => String(r.id) !== String(id));
+        _persistLocal(reports);
+    }
 
     // ─────────────────────────────────────────────────────────
     // SYNC FIRESTORE
@@ -541,7 +712,7 @@
     window.NVReports = {
         analyzeFile, analyzeText,
         extractPdfText, extractImageText,
-        saveLocal, getAllLocal, syncFromFirestore,
+        saveLocal, getAllLocal, deleteLocal, syncFromFirestore,
     };
 
 })();

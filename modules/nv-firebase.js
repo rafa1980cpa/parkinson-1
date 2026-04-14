@@ -317,6 +317,29 @@
         }
     }
 
+    // ─────────────────────────────────────────────────────────
+    // SPOTIFY AUTH — tokens por usuario (campo spotify_auth en users/{uid})
+    // ─────────────────────────────────────────────────────────
+    async function saveSpotifyAuth(uid, data) {
+        if (!_ready || !uid) return;
+        await _db.collection('users').doc(uid)
+            .set({ spotify_auth: { ...data, updatedAt: firebase.firestore.FieldValue.serverTimestamp() } }, { merge: true });
+    }
+
+    async function loadSpotifyAuth(uid) {
+        if (!_ready || !uid) return null;
+        try {
+            const snap = await _db.collection('users').doc(uid).get();
+            return snap.exists ? (snap.data().spotify_auth || null) : null;
+        } catch { return null; }
+    }
+
+    async function clearSpotifyAuth(uid) {
+        if (!_ready || !uid) return;
+        await _db.collection('users').doc(uid)
+            .set({ spotify_auth: firebase.firestore.FieldValue.delete() }, { merge: true }).catch(() => {});
+    }
+
     // Inicializar al cargar
     _init();
     document.addEventListener('DOMContentLoaded', _wireConnectivity);
@@ -343,7 +366,11 @@
         // Storage — Archivos de informes
         uploadReportFile,
         // Sync
-        syncPendingLocalSessions
+        syncPendingLocalSessions,
+        // Spotify Auth por usuario
+        saveSpotifyAuth,
+        loadSpotifyAuth,
+        clearSpotifyAuth,
     };
 
 })();
