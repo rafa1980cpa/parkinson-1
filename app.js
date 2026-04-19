@@ -4766,7 +4766,7 @@ function _showNotifDeniedGuide() {
 async function _registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     try {
-        await navigator.serviceWorker.register('/sw.js');
+        await navigator.serviceWorker.register('./sw.js');
 
         // Escuchar mensajes del SW (acciones de notificación)
         navigator.serviceWorker.addEventListener('message', e => {
